@@ -1,11 +1,10 @@
-// I2Cdev library collection - MYDEVSTUB I2C device class
-// Based on [Manufacturer Name] MYDEVSTUB datasheet, [datasheet date]
-// [current release date] by [Author Name] <[Author Email]>
-// Updates should (hopefully) always be available at https://github.com/jrowberg/i2cdevlib
+// I2Cdev library collection - MYDEVSTUB I2C device class header file
+// Based on Vishay VCNL4000 datasheet, [10-May-2012]
+// 2013-10-31 by Martin Zittel <martin.zittel@gmail.com>
+// Updates should (hopefully) always be available at https://github.com/mzittel/i2cdevlib
 //
 // Changelog:
-//     [YYYY-mm-dd] - updated some broken thing
-//     [YYYY-mm-dd] - initial release
+//     [2013-10-31] - initial release
 
 /* ============================================
 I2Cdev device library code is placed under the MIT license
@@ -33,127 +32,10 @@ THE SOFTWARE.
 
 #include "VCNL4000.h"
 
-// ============================================================================
-// DEVICE LIBRARY CONVENTIONS:
-//
-// 1. The class name should be the same as the device model if at all possible.
-//    No spaces or hyphens, and ideally no underlines unless they're absolutely
-//    necessary for clarity. ALL CAPS for model numbers, or FirstInitial caps
-//    for full names. For example:
-//      - ADXL345
-//      - MPU6050
-//      - TCA6424A
-//      - PanelPilot
-//
-// 2. All #defines should use a device-specific prefix that is the same as the
-//    all-caps version of the class name ("MYDEVSTUB_" in this example).
-//
-// 3. All #defines should be ALL CAPS, no matter what. This makes them clearly
-//    distinctive from variables, classes, and functions.
-//
-// 4. Class methods and member variables should be named using camelCaps.
-//
-// 5. Every device class should contain an "initialize()" method which takes
-//    no parameters and resets any important settings back to a known state,
-//    ideally the defaults outlined in the datasheet. Some devices have a
-//    RESET command available, which may be suitable. Some devices may not
-//    require any specific initialization, but an empty method should be
-//    created for consistency anyway.
-//
-// 6. Every device class should contain a "testConnection()" method which
-//    returns TRUE if the device appears to be connected, or FALSE otherwise.
-//    If a known ID register or device code is available, check for that. Since
-//    such an ID register is not always available, at least check to make sure
-//    that an I2C read may be performed on a specific register and that data
-//    does actually come back (the I2Cdev class returns a "bytes read" value
-//    for all read operations).
-//
-// 7. All class methods should be documented with useful information in Doxygen
-//    format. You can take the info right out of the datasheet if you want to,
-//    since that's likely to be helpful. Writing your own info is fine as well.
-//    The goal is to have enough clear documentation right in the code that
-//    someone can determine how the device works by studying the code alone.
-//
-// ============================================================================
 
-/* ============================================================================
-   I2Cdev Class Quick Primer:
-
-   The I2Cdev class provides simple methods for reading and writing from I2C
-   device registers without messing with the underlying TWI/I2C functions. You
-   just specify the device address, register address, and source or destination
-   data according to which action you are doing. Here is the list of relevant
-   function prototypes from the I2Cdev class (more info in the .cpp/.h files):
-
-    static int8_t readBit(uint8_t devAddr, uint8_t regAddr, uint8_t bitNum, uint8_t *data, uint16_t timeout=I2Cdev::readTimeout);
-    static int8_t readBitW(uint8_t devAddr, uint8_t regAddr, uint8_t bitNum, uint16_t *data, uint16_t timeout=I2Cdev::readTimeout);
-    static int8_t readBits(uint8_t devAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint8_t *data, uint16_t timeout=I2Cdev::readTimeout);
-    static int8_t readBitsW(uint8_t devAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint16_t *data, uint16_t timeout=I2Cdev::readTimeout);
-    static int8_t readByte(uint8_t devAddr, uint8_t regAddr, uint8_t *data, uint16_t timeout=I2Cdev::readTimeout);
-    static int8_t readWord(uint8_t devAddr, uint8_t regAddr, uint16_t *data, uint16_t timeout=I2Cdev::readTimeout);
-    static int8_t readBytes(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t *data, uint16_t timeout=I2Cdev::readTimeout);
-    static int8_t readWords(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint16_t *data, uint16_t timeout=I2Cdev::readTimeout);
-
-    static bool writeBit(uint8_t devAddr, uint8_t regAddr, uint8_t bitNum, uint8_t data);
-    static bool writeBitW(uint8_t devAddr, uint8_t regAddr, uint8_t bitNum, uint16_t data);
-    static bool writeBits(uint8_t devAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint8_t data);
-    static bool writeBitsW(uint8_t devAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint16_t data);
-    static bool writeByte(uint8_t devAddr, uint8_t regAddr, uint8_t data);
-    static bool writeWord(uint8_t devAddr, uint8_t regAddr, uint16_t data);
-    static bool writeBytes(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t *data);
-    static bool writeWords(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint16_t *data);
-
-   Note that ALL OF THESE METHODS ARE STATIC. No I2Cdev object is needed; just
-   use the static class methods.
-   
-   Also note that the first two parameters of every one of these methods are
-   the same: "devAddr" and "regAddr". For every method, you need to specify the
-   target/slave address and the register address.
-   
-   If your device uses 8-bit registers, you will want to use the following:
-       readBit, readBits, readByte, readBytes
-       writeBit, writeBits, writeByte, writeBytes
-       
-   ...but if it uses 16-bit registers, you will want to use these instead:
-       readBitW, readBitsW, readWord, readWords
-       writeBitW, writeBitsW, writeWord, writeWords
-       
-   Here's a sample of how to use a few of the methods. Note that in each case, 
-   the "buffer" variable is a uint8_t array or pointer, and the "value" variable
-   (in three of the write examples) is a uint8_t single byte. The multi-byte
-   write methods still require an array or pointer.
-
-       READ 1 BIT FROM DEVICE 0x68, REGISTER 0x02, BIT POSITION 4
-       bytesRead = I2Cdev::readBit(0x68, 0x02, 4, buffer);
-
-       READ 3 BITS FROM DEVICE 0x68, REGISTER 0x02, BIT POSITION 4
-       bytesRead = I2Cdev::readBits(0x68, 0x02, 4, 3, buffer);
-
-       READ 1 BYTE FROM DEVICE 0x68, REGISTER 0x02
-       bytesRead = I2Cdev::readByte(0x68, 0x02, buffer);
-
-       READ 2 BYTES FROM DEVICE 0x68, REGISTER 0x02 (AND 0x03 FOR 2ND BYTE)
-       bytesRead = I2Cdev::readBytes(0x68, 0x02, 2, buffer);
-
-       WRITE 1 BIT TO DEVICE 0x68, REGISTER 0x02, BIT POSITION 4
-       status = I2Cdev::writeBit(0x68, 0x02, 4, value);
-
-       WRITE 3 BITS TO DEVICE 0x68, REGISTER 0x02, BIT POSITION 4
-       status = I2Cdev::writeBits(0x68, 0x02, 4, 3, value);
-
-       WRITE 1 BYTE TO DEVICE 0x68, REGISTER 0x02
-       status = I2Cdev::writeByte(0x68, 0x02, value);
-
-       WRITE 2 BYTES TO DEVICE 0x68, REGISTER 0x02 (AND 0x03 FOR 2ND BYTE)
-       status = I2Cdev::writeBytes(0x68, 0x02, 2, buffer);
-       
-   The word-based methods are exactly the same, except they use 16-bit variables
-   instead of 8-bit ones.
-
-   ============================================================================ */
 
 /** Default constructor, uses default I2C address.
- * @see MYDEVSTUB_DEFAULT_ADDRESS
+ * @see VCNL4000_ADDRESS
  */
 VCNL4000::VCNL4000() {
     devAddr = VCNL4000_ADDRESS;
@@ -161,8 +43,7 @@ VCNL4000::VCNL4000() {
 
 /** Specific address constructor.
  * @param address I2C address
- * @see MYDEVSTUB_DEFAULT_ADDRESS
- * @see MYDEVSTUB_ADDRESS
+ * @see VCNL4000_ADDRESS
  */
 VCNL4000::VCNL4000(uint8_t address) {
     devAddr = address;
@@ -171,11 +52,9 @@ VCNL4000::VCNL4000(uint8_t address) {
 /** Power on and prepare for general usage.
  */
 void VCNL4000::initialize() {
-    // ----------------------------------------------------------------------------
-    // STUB TODO:
-    // Perform any important initialization here. Maybe nothing is required, but
-    // the method should exist anyway.
-    // ----------------------------------------------------------------------------
+	setIrLedCurrent(20); // set to 20 * 10mA = 200mA
+	setProximityAdjust(0x81); // magic number from Adafruit
+	
 }
 
 /** Verify the I2C connection.
@@ -189,70 +68,165 @@ bool VCNL4000::testConnection() {
     return false;
 }
 
-// ----------------------------------------------------------------------------
-// STUB TODO:
-// Define methods to fully cover all available functionality provided by the
-// device, according to the datasheet and/or register map. Unless there is very
-// clear reason not to, try to follow the get/set naming convention for all
-// values, for instance:
-//   - uint8_t getThreshold()
-//   - void setThreshold(uint8_t threshold)
-//   - uint8_t getRate()
-//   - void setRate(uint8_t rate)
-//
-// Some methods may be named differently if it makes sense. As long as all
-// functionality is covered, that's the important part. The methods here are
-// only examples and should not be kept for your real device.
-// ----------------------------------------------------------------------------
+/** Reset the settings.
+ * Make sure the device is connected and responds as expected.
+ */
+void VCNL4000::reset() {
+	setIrLedCurrent(20); // set to 20 * 10mA = 200mA
+	setProximityAdjust(0x81); // magic number from Adafruit
+}
 
 
-// AmbientLight register, read-only
+/** Capture the Ambient Light and return the Captured Data.
+ * @return Ambient Light Data measured.
+ */
 uint16_t VCNL4000::getAmbientLight(){
-	readBytes( devAddr, VCNL4000_AMBIENTDATA, 2, buffer);
-	return (buffer[0] << 8) || buffer[1];
+
+
+	I2Cdev::writeByte( devAddr,  VCNL4000_RA_COMMAND, VCNL4000_MEASUREAMBIENT);
+	
+	while(1){
+		I2Cdev::readByte(devAddr, VCNL4000_RA_COMMAND, buffer);
+
+		//Serial.print("Ready = 0x"); Serial.println(result, HEX);
+		if (buffer[0] & VCNL4000_AMBIENTREADY) {
+		
+			I2Cdev::readBytes( devAddr, VCNL4000_RA_AMBIENTDATA, 2, buffer);
+			uint16_t light = 0;
+			
+			light = buffer[0];
+			light <<= 8;
+			light = light | buffer[1];
+			
+			return light;
+			
+			
+		}
+		delay(1);
+	}
+
 }
 
-// Proximity register, read-only
+/** Capture the Proximity and return the Captured Data.
+ * @return Ambient Proximity measured.
+ */
 uint16_t VCNL4000::getProximity(){
-	return -1;
+	I2Cdev::writeByte( devAddr,  VCNL4000_RA_COMMAND, VCNL4000_MEASUREPROXIMITY);
+	
+	while(1){
+		I2Cdev::readByte(devAddr, VCNL4000_RA_COMMAND, buffer);
+
+		//Serial.print("Ready = 0x"); Serial.println(result, HEX);
+		if (buffer[0] & VCNL4000_PROXIMITYREADY) {
+		
+			I2Cdev::readBytes( devAddr, VCNL4000_RA_PROXIMITYDATA, 2, buffer);
+			uint16_t prox = 0;
+			
+			prox = buffer[0];
+			prox <<= 8;
+			prox = prox | buffer[1];
+			
+			// return (buffer[0] << 8) || buffer[1];
+			return prox;
+			
+			
+		}
+		delay(1);
+	}
 }
 
-
+/**	Set ambient light parameters. Averaging and Continous conversion mode.
+ * 1. (msb) bit = cont. conversion mode (can be set on for faster measurement)
+ * 5. bit = Auto offset compensation (can be set on to compensate package/tempratrue/... related drift)
+ * 6.-8. bit = Averaging function (number of measuremants per run)
+ * @param ambient light parameters
+ */
 void VCNL4000::setAmbientLightParameter(uint8_t value){
-	return;
+	I2Cdev::writeByte( devAddr,  VCNL4000_RA_AMBIENTPARAMETER, value);
 }
 
-
+/**	Get ambient light parameters. Averaging and Continous conversion mode.
+ * 1. (msb) bit = cont. conversion mode (can be set on for faster measurement)
+ * 5. bit = Auto offset compensation (can be set on to compensate package/tempratrue/... related drift)
+ * 6.-8. bit = Averaging function (number of measuremants per run)
+ * @return ambient light parameters
+ */
 uint8_t VCNL4000::getAmbientLightParameter(){
-	return -1;
+	I2Cdev::readByte(devAddr, VCNL4000_RA_AMBIENTPARAMETER, buffer);
+	return buffer[0];
 }
 
+/**	Set the current for the IR LED used for the ambient light measurements
+ * 1.-2. (msb) bit = Fuse bits (read only)
+ * 3.-8. bit = IR-LED current (current = Value * 10mA)
+ * @param ir led current
+ */
 void VCNL4000::setIrLedCurrent(uint16_t value){
-	return;
+	I2Cdev::writeByte( devAddr,  VCNL4000_RA_IRLED, value);
 }
-
+/**	Set the current for the IR LED used for the ambient light measurements
+ * 1.-2. (msb) bit = Fuse bits (read only)
+ * 3.-8. bit = IR-LED current (current = Value * 10mA)
+ * @return ir led current
+ */
 uint16_t VCNL4000::getIrLedCurrent(){
-	return -1;
+	I2Cdev::readByte(devAddr, VCNL4000_RA_IRLED, buffer);
+	return buffer[0];
 }
 
 
-
+/**	Set the current for the IR LED used for the ambient light measurements
+ * 1.-6. (msb) bit = N/A
+ * 7.-8. bit = Proximity frequency (3.125Mhz/1.5625Mhz/781.25Khz/390.625Khz)
+ * @see VCNL4000_3M125
+ * @see VCNL4000_1M5625
+ * @see VCNL4000_781K25
+ * @see VCNL4000_390K625
+ * @param Proximity frequency
+ */
 void VCNL4000::setProximityMeasurementFrequency(uint8_t value){
-	return;
+	I2Cdev::writeByte( devAddr,  VCNL4000_RA_SIGNALFREQ, value);
 }
 
+/**	Set the current for the IR LED used for the ambient light measurements
+ * 1.-6. (msb) bit = N/A
+ * 7.-8. bit = Proximity frequency (3.125Mhz/1.5625Mhz/781.25Khz/390.625Khz)
+ * @see VCNL4000_3M125
+ * @see VCNL4000_1M5625
+ * @see VCNL4000_781K25
+ * @see VCNL4000_390K625
+ * @return Proximity frequency
+ */
 uint8_t VCNL4000::getProximityMeasurementFrequency(){
-	return -1;
+	I2Cdev::readByte(devAddr, VCNL4000_RA_SIGNALFREQ, buffer);
+	return buffer[0];
 }
 
-void VCNL4000::setProximityAdjust(uint8_t){
-	return;
+/**	Proximity Modulator Timing Adjustment
+ * 1.-3. (msb) bit = Modulation delay time (Delay between IR-LED Signal and IR input evaluation)
+ * 4.-5. bit = N/A
+ * 6.-8. bit = Modulation dead Time (Setting a dead time in evaluation of IR signal at the slopes of the IR signal. 
+)
+ * @param modulator timing
+ */
+void VCNL4000::setProximityAdjust(uint8_t value){
+	I2Cdev::writeByte( devAddr,  VCNL4000_RA_PROXINITYADJUST, value);
 }
 
-uint8_t VCNL4000::setProximityAdjust(){
-	return -1;
+/**	Proximity Modulator Timing Adjustment
+ * 1.-3. (msb) bit = Modulation delay time (Delay between IR-LED Signal and IR input evaluation)
+ * 4.-5. bit = N/A
+ * 6.-8. bit = Modulation dead Time (Setting a dead time in evaluation of IR signal at the slopes of the IR signal. 
+)
+ * @return modulator timing
+ */
+uint8_t VCNL4000::getProximityAdjust(){
+	I2Cdev::readByte(devAddr, VCNL4000_RA_PROXINITYADJUST, buffer);
+	return buffer[0];
 }
 
 // WHO_AM_I register, read-only
 uint8_t VCNL4000::getDeviceID(){
+	I2Cdev::readByte(devAddr, VCNL4000_RA_PRODUCTID, buffer);
+	return buffer[0];
 }

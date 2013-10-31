@@ -1,11 +1,10 @@
 // I2Cdev library collection - MYDEVSTUB I2C device class header file
-// Based on [Manufacturer Name] MYDEVSTUB datasheet, [datasheet date]
-// [current release date] by [Author Name] <[Author Email]>
-// Updates should (hopefully) always be available at https://github.com/jrowberg/i2cdevlib
+// Based on Vishay VCNL4000 datasheet, [10-May-2012]
+// 2013-10-31 by Martin Zittel <martin.zittel@gmail.com>
+// Updates should (hopefully) always be available at https://github.com/mzittel/i2cdevlib
 //
 // Changelog:
-//     [YYYY-mm-dd] - updated some broken thing
-//     [YYYY-mm-dd] - initial release
+//     [2013-10-31] - initial release
 
 /* ============================================
 I2Cdev device library code is placed under the MIT license
@@ -36,68 +35,10 @@ THE SOFTWARE.
 
 #include "I2Cdev.h"
 
-// ============================================================================
-// DEVICE LIBRARY CONVENTIONS:
-//
-// 1. The class name should be the same as the device model if at all possible.
-//    No spaces or hyphens, and ideally no underlines unless they're absolutely
-//    necessary for clarity. ALL CAPS for model numbers, or FirstInitial caps
-//    for full names. For example:
-//      - ADXL345
-//      - MPU6050
-//      - TCA6424A
-//      - PanelPilot
-//
-// 2. All #defines should use a device-specific prefix that is the same as the
-//    all-caps version of the class name ("MYDEVSTUB_" in this example).
-//
-// 3. All #defines should be ALL CAPS, no matter what. This makes them clearly
-//    distinctive from variables, classes, and functions.
-//
-// 4. Class methods and member variables should be named using camelCaps.
-//
-// 5. Every device class should contain an "initialize()" method which takes
-//    no parameters and resets any important settings back to a known state,
-//    ideally the defaults outlined in the datasheet. Some devices have a
-//    RESET command available, which may be suitable. Some devices may not
-//    require any specific initialization, but an empty method should be
-//    created for consistency anyway.
-//
-// 6. Every device class should contain a "testConnection()" method which
-//    returns TRUE if the device appears to be connected, or FALSE otherwise.
-//    If a known ID register or device code is available, check for that. Since
-//    such an ID register is not always available, at least check to make sure
-//    that an I2C read may be performed on a specific register and that data
-//    does actually come back (the I2Cdev class returns a "bytes read" value
-//    for all read operations).
-//
-// 7. All class methods should be documented with useful information in Doxygen
-//    format. You can take the info right out of the datasheet if you want to,
-//    since that's likely to be helpful. Writing your own info is fine as well.
-//    The goal is to have enough clear documentation right in the code that
-//    someone can determine how the device works by studying the code alone.
-//
-// ============================================================================
 
-// ----------------------------------------------------------------------------
-// STUB TODO:
-// List all possible device I2C addresses here, if they are predefined. Some
-// devices only have one possible address, in which case that one should be
-// defined as both [MYDEVSTUB]_ADDRESS and [MYDEVSTUB]_DEFAULT_ADDRESS for
-// consistency. The *_DEFAULT address will be used if a device object is
-// created without an address provided in the constructor. Note that I2C
-// devices conventionally use 7-bit addresses, so these will generally be
-// between 0x00 and 0x7F.
-// ----------------------------------------------------------------------------
 #define VCNL4000_ADDRESS 0x13
 
-// ----------------------------------------------------------------------------
-// STUB TODO:
-// List all registers that this device has. The goal for all device libraries
-// is to have complete coverage of all possible functions, so be sure to add
-// everything in the datasheet. Register address constants should use the extra
-// prefix "RA_", followed by the datasheet's given name for each register.
-// ----------------------------------------------------------------------------
+
 #define VCNL4000_RA_COMMAND 0x80
 #define VCNL4000_RA_PRODUCTID 0x81
 #define VCNL4000_RA_IRLED 0x83
@@ -109,30 +50,13 @@ THE SOFTWARE.
 #define VCNL4000_RA_SIGNALFREQ 0x89
 #define VCNL4000_RA_PROXINITYADJUST 0x8A
 
-// ----------------------------------------------------------------------------
-// STUB TODO:
-// List register structures wherever necessary. Bit position constants should
-// end in "_BIT", and are defined from 7 to 0, with 7 being the left/MSB and
-// 0 being the right/LSB. If the device uses 16-bit registers instead of the
-// more common 8-bit registers, the range is 15 to 0. Field length constants
-// should end in "_LENGTH", but otherwise match the name of bit position
-// constant that it complements. Fields that are a single bit in length don't
-// need a separate field length constant.
-// ----------------------------------------------------------------------------
+
 #define VCNL4000_MEASUREAMBIENT 0x10	// 0001 0000
 #define VCNL4000_MEASUREPROXIMITY 0x08	// 0000 1000
 #define VCNL4000_AMBIENTREADY 0x40		// 0100 0000
 #define VCNL4000_PROXIMITYREADY 0x20	// 0010 0000
 
-// ----------------------------------------------------------------------------
-// STUB TODO:
-// List any special predefined values for each register according to the
-// datasheet. For example, MEMS devices often provide different options for
-// measurement rates, say 25Hz, 50Hz, 100Hz, and 200Hz. These are typically
-// represented by arbitrary bit values, say 0b00, 0b01, 0b10, and 0b11 (or 0x0,
-// 0x1, 0x2, and 0x3). Defining them here makes it easy to know which options
-// are available.
-// ----------------------------------------------------------------------------
+
 #define VCNL4000_3M125 0
 #define VCNL4000_1M5625 1
 #define VCNL4000_781K25 2
@@ -146,27 +70,12 @@ class VCNL4000 {
         void initialize();
         bool testConnection();
 
-// ----------------------------------------------------------------------------
-// STUB TODO:
-// Declare methods to fully cover all available functionality provided by the
-// device, according to the datasheet and/or register map. Unless there is very
-// clear reason not to, try to follow the get/set naming convention for all
-// values, for instance:
-//   - uint8_t getThreshold()
-//   - void setThreshold(uint8_t threshold)
-//   - uint8_t getRate()
-//   - void setRate(uint8_t rate)
-//
-// Some methods may be named differently if it makes sense. As long as all
-// functionality is covered, that's the important part. The methods here are
-// only examples and should not be kept for your real device.
-// ----------------------------------------------------------------------------
 
         // AmbientLight register, read-only
         uint16_t getAmbientLight();
 
         // Proximity register, read-only
-        uint16t getProximity();
+        uint16_t getProximity();
 
 		
 		void setAmbientLightParameter(uint8_t value);
@@ -180,22 +89,13 @@ class VCNL4000 {
 		void setProximityMeasurementFrequency(uint8_t value);
         uint8_t getProximityMeasurementFrequency();
         
-		void setProximityAdjust(uint8_t);
-		uint8_t setProximityAdjust();
+		void setProximityAdjust(uint8_t value);
+		uint8_t getProximityAdjust();
 		
-        // WHO_AM_I register, read-only
         uint8_t getDeviceID();
+		
+		void reset();
 
-// ----------------------------------------------------------------------------
-// STUB TODO:
-// Declare private object helper variables or local storage for particular
-// device settings, if required. All devices need a "devAddr" variable to store
-// the I2C slave address for easy access. Most devices also need a buffer for
-// reads (the I2Cdev class' read methods use a pointer for the storage location
-// of any read data). The buffer should be of type "uint8_t" if the device uses
-// 8-bit registers, or type "uint16_t" if the device uses 16-bit registers.
-// Many devices will not require more member variables than this.
-// ----------------------------------------------------------------------------
     private:
         uint8_t devAddr;
         uint8_t buffer[2];
