@@ -1,4 +1,4 @@
-// I2Cdev library collection - MYDEVSTUB I2C device class header file
+// I2Cdev library collection - VCNL4000 I2C device class header file
 // Based on Vishay VCNL4000 datasheet, [10-May-2012]
 // 2013-10-31 by Martin Zittel <martin.zittel@gmail.com>
 // Updates should (hopefully) always be available at https://github.com/mzittel/i2cdevlib
