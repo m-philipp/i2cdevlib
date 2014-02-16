@@ -53,8 +53,8 @@ THE SOFTWARE.
 #define L3G4200D_RA_OUT_Y_H        0x2B
 #define L3G4200D_RA_OUT_Z_L        0x2C
 #define L3G4200D_RA_OUT_Z_H        0x2D
-#define L3G4200D_RA_FIFO_CTRL  	   0x2E
-#define L3G4200D_RA_FIFO_SRC	   0x2F
+#define L3G4200D_RA_FIFO_CTRL      0x2E
+#define L3G4200D_RA_FIFO_SRC       0x2F
 #define L3G4200D_RA_INT1_CFG       0x30
 #define L3G4200D_RA_INT1_SRC       0x31
 #define L3G4200D_RA_INT1_THS_XH    0x32
@@ -211,149 +211,149 @@ class L3G4200D {
         void initialize();
         bool testConnection();
 
-		// WHO_AM_I register, read-only
+        // WHO_AM_I register, read-only
         uint8_t getDeviceID();
-		
-		// CTRL_REG1 register, r/w
-		void setOutputDataRate(uint16_t rate);
-		uint16_t getOutputDataRate();
-		void setBandwidthCutOffMode(uint8_t mode);
-		uint8_t getBandwidthCutOffMode();
-		float getBandwidthCutOff();
-		void setPowerOn(bool on);
-		bool getPowerOn();
-		void setZEnabled(bool enabled);
-		bool getZEnabled();
-		void setYEnabled(bool enabled);
-		bool getYEnabled();
-		void setXEnabled(bool enabled);
-		bool getXEnabled();
 
-		// CTRL_REG2 register, r/w
-		void setHighPassMode(uint8_t mode);
-		uint8_t getHighPassMode();
-		void setHighPassFilterCutOffFrequencyLevel(uint8_t level);
-		uint8_t getHighPassFilterCutOffFrequencyLevel();
+        // CTRL_REG1 register, r/w
+        void setOutputDataRate(uint16_t rate);
+        uint16_t getOutputDataRate();
+        void setBandwidthCutOffMode(uint8_t mode);
+        uint8_t getBandwidthCutOffMode();
+        float getBandwidthCutOff();
+        void setPowerOn(bool on);
+        bool getPowerOn();
+        void setZEnabled(bool enabled);
+        bool getZEnabled();
+        void setYEnabled(bool enabled);
+        bool getYEnabled();
+        void setXEnabled(bool enabled);
+        bool getXEnabled();
 
-		// CTRL_REG3 register, r/w
-		void setINT1InterruptEnabled(bool enabled);
-		bool getINT1InterruptEnabled();
-		void setINT1BootStatusEnabled(bool enabled);
-		bool getINT1BootStatusEnabled();
-		void interruptActiveINT1Config();
-		void setOutputMode(bool mode);
-		bool getOutputMode();
-		void setINT2DataReadyEnabled(bool enabled);
-		bool getINT2DataReadyEnabled();
-		void setINT2FIFOWatermarkInterruptEnabled(bool enabled);
-		bool getINT2FIFOWatermarkInterruptEnabled();
-		void setINT2FIFOOverrunInterruptEnabled(bool enabled);
-		bool getINT2FIFOOverrunInterruptEnabled();
-		void setINT2FIFOEmptyInterruptEnabled(bool enabled);
-		bool getINT2FIFOEmptyInterruptEnabled();
-		
-		// CTRL_REG4 register, r/w
-		void setBlockDataUpdateEnabled(bool enabled);
-		bool getBlockDataUpdateEnabled();
-		void setEndianMode(bool endianness);
-		bool getEndianMode();
-		void setFullScale(uint16_t scale);
-		uint16_t getFullScale();
-		void setSelfTestMode(uint8_t mode);
-		uint8_t getSelfTestMode();
-		void setSPIMode(bool mode);
-		bool getSPIMode();
+        // CTRL_REG2 register, r/w
+        void setHighPassMode(uint8_t mode);
+        uint8_t getHighPassMode();
+        void setHighPassFilterCutOffFrequencyLevel(uint8_t level);
+        uint8_t getHighPassFilterCutOffFrequencyLevel();
 
-		// CTRL_REG5 register, r/w
-		void rebootMemoryContent();
-		void setFIFOEnabled(bool enabled);
-		bool getFIFOEnabled();
-		void setHighPassFilterEnabled(bool enabled);
-		bool getHighPassFilterEnabled();
-		void setDataFilter(uint8_t filter);
-		uint8_t getDataFilter();
-		
-		// REFERENCE/DATACAPTURE register, r/w
-		void setInterruptReference(uint8_t reference);
-		uint8_t getInterruptReference();
-		
-		// OUT_TEMP register, read-only
-		uint8_t getTemperature();
+        // CTRL_REG3 register, r/w
+        void setINT1InterruptEnabled(bool enabled);
+        bool getINT1InterruptEnabled();
+        void setINT1BootStatusEnabled(bool enabled);
+        bool getINT1BootStatusEnabled();
+        void interruptActiveINT1Config();
+        void setOutputMode(bool mode);
+        bool getOutputMode();
+        void setINT2DataReadyEnabled(bool enabled);
+        bool getINT2DataReadyEnabled();
+        void setINT2FIFOWatermarkInterruptEnabled(bool enabled);
+        bool getINT2FIFOWatermarkInterruptEnabled();
+        void setINT2FIFOOverrunInterruptEnabled(bool enabled);
+        bool getINT2FIFOOverrunInterruptEnabled();
+        void setINT2FIFOEmptyInterruptEnabled(bool enabled);
+        bool getINT2FIFOEmptyInterruptEnabled();
+        
+        // CTRL_REG4 register, r/w
+        void setBlockDataUpdateEnabled(bool enabled);
+        bool getBlockDataUpdateEnabled();
+        void setEndianMode(bool endianness);
+        bool getEndianMode();
+        void setFullScale(uint16_t scale);
+        uint16_t getFullScale();
+        void setSelfTestMode(uint8_t mode);
+        uint8_t getSelfTestMode();
+        void setSPIMode(bool mode);
+        bool getSPIMode();
 
-		// STATUS register, read-only
-		bool getXYZOverrun();
-		bool getZOverrun();
-		bool getYOverrun();
-		bool getXOverrun();
-		bool getXYZDataAvailable();
-		bool getZDataAvailable();
-		bool getYDataAvailable();
-		bool getXDataAvailable();
+        // CTRL_REG5 register, r/w
+        void rebootMemoryContent();
+        void setFIFOEnabled(bool enabled);
+        bool getFIFOEnabled();
+        void setHighPassFilterEnabled(bool enabled);
+        bool getHighPassFilterEnabled();
+        void setDataFilter(uint8_t filter);
+        uint8_t getDataFilter();
+        
+        // REFERENCE/DATACAPTURE register, r/w
+        void setInterruptReference(uint8_t reference);
+        uint8_t getInterruptReference();
+        
+        // OUT_TEMP register, read-only
+        uint8_t getTemperature();
+
+        // STATUS register, read-only
+        bool getXYZOverrun();
+        bool getZOverrun();
+        bool getYOverrun();
+        bool getXOverrun();
+        bool getXYZDataAvailable();
+        bool getZDataAvailable();
+        bool getYDataAvailable();
+        bool getXDataAvailable();
 
         // OUT_* registers, read-only
         void getAngularVelocity(int16_t* x, int16_t* y, int16_t* z);
         int16_t getAngularVelocityX();
-		int16_t getAngularVelocityY();
-		int16_t getAngularVelocityZ();
-		
-		// FIFO_CTRL register, r/w
-		void setFIFOMode(uint8_t mode);
-		uint8_t getFIFOMode();
-		void setFIFOThreshold(uint8_t wtm);
-		uint8_t getFIFOThreshold();
-		
-		// FIFO_SRC register, read-only
-		bool getFIFOAtWatermark();
-		bool getFIFOOverrun();
-		bool getFIFOEmpty();
-		uint8_t getFIFOStoredDataLevel();
-		
-		// INT1_CFG register, r/w
-		void setInterruptCombination(bool combination);
-		bool getInterruptCombination();
-		void setInterruptRequestLatched(bool latched);
-		bool getInterruptRequestLatched();
-		void setZHighInterruptEnabled(bool enabled);
-		bool getZHighInterruptEnabled();
-		void setYHighInterruptEnabled(bool enabled);
-		bool getYHighInterruptEnabled();
-		void setXHighInterruptEnabled(bool enabled);
-		bool getXHighInterruptEnabled();
-		void setZLowInterruptEnabled(bool enabled);
-		bool getZLowInterruptEnabled();
-		void setYLowInterruptEnabled(bool enabled);
-		bool getYLowInterruptEnabled();
-		void setXLowInterruptEnabled(bool enabled);
-		bool getXLowInterruptEnabled();
+        int16_t getAngularVelocityY();
+        int16_t getAngularVelocityZ();
 
-		// INT1_SRC register, read-only
-		bool getInterruptActive();
-		bool getZHigh();
-		bool getZLow();
-		bool getYHigh();
-		bool getYLow();
-		bool getXHigh();
-		bool getXLow();
-		
-		// INT1_THS_* registers, r/w
-		void setXHighThreshold(uint8_t threshold);
-		uint8_t getXHighThreshold();
-		void setXLowThreshold(uint8_t threshold);
-		uint8_t getXLowThreshold();
-		void setYHighThreshold(uint8_t threshold);
-		uint8_t getYHighThreshold();
-		void setYLowThreshold(uint8_t threshold);
-		uint8_t getYLowThreshold();
-		void setZHighThreshold(uint8_t threshold);
-		uint8_t getZHighThreshold();
-		void setZLowThreshold(uint8_t threshold);
-		uint8_t getZLowThreshold();
+        // FIFO_CTRL register, r/w
+        void setFIFOMode(uint8_t mode);
+        uint8_t getFIFOMode();
+        void setFIFOThreshold(uint8_t wtm);
+        uint8_t getFIFOThreshold();
 
-		// INT1_DURATION register, r/w
-		void setDuration(uint8_t duration);
-		uint8_t getDuration();
-		void setWaitEnabled(bool enabled);
-		bool getWaitEnabled();
+        // FIFO_SRC register, read-only
+        bool getFIFOAtWatermark();
+        bool getFIFOOverrun();
+        bool getFIFOEmpty();
+        uint8_t getFIFOStoredDataLevel();
+
+        // INT1_CFG register, r/w
+        void setInterruptCombination(bool combination);
+        bool getInterruptCombination();
+        void setInterruptRequestLatched(bool latched);
+        bool getInterruptRequestLatched();
+        void setZHighInterruptEnabled(bool enabled);
+        bool getZHighInterruptEnabled();
+        void setYHighInterruptEnabled(bool enabled);
+        bool getYHighInterruptEnabled();
+        void setXHighInterruptEnabled(bool enabled);
+        bool getXHighInterruptEnabled();
+        void setZLowInterruptEnabled(bool enabled);
+        bool getZLowInterruptEnabled();
+        void setYLowInterruptEnabled(bool enabled);
+        bool getYLowInterruptEnabled();
+        void setXLowInterruptEnabled(bool enabled);
+        bool getXLowInterruptEnabled();
+
+        // INT1_SRC register, read-only
+        bool getInterruptActive();
+        bool getZHigh();
+        bool getZLow();
+        bool getYHigh();
+        bool getYLow();
+        bool getXHigh();
+        bool getXLow();
+        
+        // INT1_THS_* registers, r/w
+        void setXHighThreshold(uint8_t threshold);
+        uint8_t getXHighThreshold();
+        void setXLowThreshold(uint8_t threshold);
+        uint8_t getXLowThreshold();
+        void setYHighThreshold(uint8_t threshold);
+        uint8_t getYHighThreshold();
+        void setYLowThreshold(uint8_t threshold);
+        uint8_t getYLowThreshold();
+        void setZHighThreshold(uint8_t threshold);
+        uint8_t getZHighThreshold();
+        void setZLowThreshold(uint8_t threshold);
+        uint8_t getZLowThreshold();
+
+        // INT1_DURATION register, r/w
+        void setDuration(uint8_t duration);
+        uint8_t getDuration();
+        void setWaitEnabled(bool enabled);
+        bool getWaitEnabled();
 
     private:
         uint8_t devAddr;

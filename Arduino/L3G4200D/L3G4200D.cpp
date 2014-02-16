@@ -57,7 +57,7 @@ L3G4200D::L3G4200D(uint8_t address) {
  * @see L3G4200D_RA_CTRL_REG5
  */
 void L3G4200D::initialize() {
-	I2Cdev::writeByte(devAddr, L3G4200D_RA_CTRL_REG1, 0b00001111);
+    I2Cdev::writeByte(devAddr, L3G4200D_RA_CTRL_REG1, 0b00001111);
     I2Cdev::writeByte(devAddr, L3G4200D_RA_CTRL_REG2, 0b00000000);
     I2Cdev::writeByte(devAddr, L3G4200D_RA_CTRL_REG3, 0b00000000);
     I2Cdev::writeByte(devAddr, L3G4200D_RA_CTRL_REG4, 0b00000000);
@@ -69,7 +69,8 @@ void L3G4200D::initialize() {
  * @return True if connection is valid, false otherwise
  */
 bool L3G4200D::testConnection() {
-    return getDeviceID() == 0b11010011;
+    return getDeviceID() == 0b11010011 ||
+           getDeviceID() == 0b11010100; /* LSM9DS0 */
 }
 
 // WHO_AM_I register, read-only
@@ -97,20 +98,20 @@ uint8_t L3G4200D::getDeviceID() {
  * @see L3G4200D_RATE_800
  */
 void L3G4200D::setOutputDataRate(uint16_t rate) {
-	uint8_t writeVal;
-	
-	if (rate == 100) {
-		writeVal = L3G4200D_RATE_100;
-	} else if (rate == 200) {
-		writeVal = L3G4200D_RATE_200;
-	} else if (rate == 400) {
-		writeVal = L3G4200D_RATE_400;
-	} else {
-		writeVal = L3G4200D_RATE_800;
-	}
-	
-	I2Cdev::writeBits(devAddr, L3G4200D_RA_CTRL_REG1, L3G4200D_ODR_BIT,
-		L3G4200D_ODR_LENGTH, writeVal); 
+    uint8_t writeVal;
+    
+    if (rate == 100) {
+        writeVal = L3G4200D_RATE_100;
+    } else if (rate == 200) {
+        writeVal = L3G4200D_RATE_200;
+    } else if (rate == 400) {
+        writeVal = L3G4200D_RATE_400;
+    } else {
+        writeVal = L3G4200D_RATE_800;
+    }
+    
+    I2Cdev::writeBits(devAddr, L3G4200D_RA_CTRL_REG1, L3G4200D_ODR_BIT,
+        L3G4200D_ODR_LENGTH, writeVal); 
 }
 
 /** Get the current output data rate
@@ -124,18 +125,18 @@ void L3G4200D::setOutputDataRate(uint16_t rate) {
  * @see L3G4200D_RATE_800
  */
 uint16_t L3G4200D::getOutputDataRate() {
-	I2Cdev::readBits(devAddr, L3G4200D_RA_CTRL_REG1, L3G4200D_ODR_BIT, 
-		L3G4200D_ODR_LENGTH, buffer);
-	uint8_t rate = buffer[0];
+    I2Cdev::readBits(devAddr, L3G4200D_RA_CTRL_REG1, L3G4200D_ODR_BIT, 
+        L3G4200D_ODR_LENGTH, buffer);
+    uint8_t rate = buffer[0];
 
-	if (rate == L3G4200D_RATE_100) {
-		return 100;
-	} else if (rate == L3G4200D_RATE_200) {
-		return 200;
-	} else if (rate == L3G4200D_RATE_400) {
-		return 400;
-	}
-	return 800;
+    if (rate == L3G4200D_RATE_100) {
+        return 100;
+    } else if (rate == L3G4200D_RATE_200) {
+        return 200;
+    } else if (rate == L3G4200D_RATE_400) {
+        return 400;
+    }
+    return 800;
 }
 
 /** Set the bandwidth cut-off mode
@@ -149,8 +150,8 @@ uint16_t L3G4200D::getOutputDataRate() {
  * @see L3G4200D_BW_HIGH
  */
 void L3G4200D::setBandwidthCutOffMode(uint8_t mode) {
-	I2Cdev::writeBits(devAddr, L3G4200D_RA_CTRL_REG1, L3G4200D_BW_BIT, 
-		L3G4200D_BW_LENGTH, mode);
+    I2Cdev::writeBits(devAddr, L3G4200D_RA_CTRL_REG1, L3G4200D_BW_BIT, 
+        L3G4200D_BW_LENGTH, mode);
 }
 
 /** Get the current bandwidth cut-off mode
@@ -164,9 +165,9 @@ void L3G4200D::setBandwidthCutOffMode(uint8_t mode) {
  * @see L3G4200D_BW_HIGH
  */
 uint8_t L3G4200D::getBandwidthCutOffMode() {
-	I2Cdev::readBits(devAddr, L3G4200D_RA_CTRL_REG1, L3G4200D_BW_BIT, 
-		L3G4200D_BW_LENGTH, buffer);
-	return buffer[0];
+    I2Cdev::readBits(devAddr, L3G4200D_RA_CTRL_REG1, L3G4200D_BW_BIT, 
+        L3G4200D_BW_LENGTH, buffer);
+    return buffer[0];
 }
 
 /** Gets the current bandwidth cutoff based on ODR and BW
@@ -186,46 +187,46 @@ uint8_t L3G4200D::getBandwidthCutOffMode() {
  * @see L3G4200D_BW_HIGH
  */
 float L3G4200D::getBandwidthCutOff() {
-	uint16_t dataRate = getOutputDataRate();
-	uint8_t bandwidthMode = getBandwidthCutOffMode();
+    uint16_t dataRate = getOutputDataRate();
+    uint8_t bandwidthMode = getBandwidthCutOffMode();
 
-	if (dataRate == 100) {
-		if (bandwidthMode == L3G4200D_BW_LOW) {
-			return 12.5;
-		} else {
-			return 25.0;
-		}
-	} else if (dataRate == 200) {
-		if (bandwidthMode == L3G4200D_BW_LOW) {
-			return 12.5;
-		} else if (bandwidthMode == L3G4200D_BW_MED_LOW) {
-			return 25.0;
-		} else if (bandwidthMode == L3G4200D_BW_MED_HIGH) {
-			return 50.0;
-		} else {
-			return 70.0;
-		}
-	} else if (dataRate == 400) {
-		if (bandwidthMode == L3G4200D_BW_LOW) {
-			return 20.0;
-		} else if (bandwidthMode == L3G4200D_BW_MED_LOW) {
-			return 25.0;
-		} else if (bandwidthMode == L3G4200D_BW_MED_HIGH) {
-			return 50.0;
-		} else {
-			return 110.0;
-		}
-	} else {
-		if (bandwidthMode == L3G4200D_BW_LOW) {
-			return 30.0;
-		} else if (bandwidthMode == L3G4200D_BW_MED_LOW) {
-			return 35.0;
-		} else if (bandwidthMode == L3G4200D_BW_MED_HIGH) {
-			return 50.0;
-		} else {
-			return 110.0;
-		}
-	}
+    if (dataRate == 100) {
+        if (bandwidthMode == L3G4200D_BW_LOW) {
+            return 12.5;
+        } else {
+            return 25.0;
+        }
+    } else if (dataRate == 200) {
+        if (bandwidthMode == L3G4200D_BW_LOW) {
+            return 12.5;
+        } else if (bandwidthMode == L3G4200D_BW_MED_LOW) {
+            return 25.0;
+        } else if (bandwidthMode == L3G4200D_BW_MED_HIGH) {
+            return 50.0;
+        } else {
+            return 70.0;
+        }
+    } else if (dataRate == 400) {
+        if (bandwidthMode == L3G4200D_BW_LOW) {
+            return 20.0;
+        } else if (bandwidthMode == L3G4200D_BW_MED_LOW) {
+            return 25.0;
+        } else if (bandwidthMode == L3G4200D_BW_MED_HIGH) {
+            return 50.0;
+        } else {
+            return 110.0;
+        }
+    } else {
+        if (bandwidthMode == L3G4200D_BW_LOW) {
+            return 30.0;
+        } else if (bandwidthMode == L3G4200D_BW_MED_LOW) {
+            return 35.0;
+        } else if (bandwidthMode == L3G4200D_BW_MED_HIGH) {
+            return 50.0;
+        } else {
+            return 110.0;
+        }
+    }
 }
 
 /** Set power on or off
@@ -234,7 +235,7 @@ float L3G4200D::getBandwidthCutOff() {
  * @see L3G4200D_PD_BIT
  */
 void L3G4200D::setPowerOn(bool on) {
-	I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG1, L3G4200D_PD_BIT, on);
+    I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG1, L3G4200D_PD_BIT, on);
 }
 
 /** Get the current power state
@@ -243,8 +244,8 @@ void L3G4200D::setPowerOn(bool on) {
  * @see L3G4200D_PD_BIT
  */
 bool L3G4200D::getPowerOn() {
-	I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG1, L3G4200D_PD_BIT, buffer);
-	return buffer[0];
+    I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG1, L3G4200D_PD_BIT, buffer);
+    return buffer[0];
 }
 
 /** Enables or disables the ability to get Z data
@@ -253,7 +254,7 @@ bool L3G4200D::getPowerOn() {
  * @see L3G4200D_ZEN_BIT
  */
 void L3G4200D::setZEnabled(bool enabled) {
-	I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG1, L3G4200D_ZEN_BIT, enabled);
+    I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG1, L3G4200D_ZEN_BIT, enabled);
 }
 
 /** Get whether Z axis data is enabled
@@ -262,8 +263,8 @@ void L3G4200D::setZEnabled(bool enabled) {
  * @see L3G4200D_ZEN_BIT
  */
 bool L3G4200D::getZEnabled() {
-	I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG1, L3G4200D_ZEN_BIT, buffer);
-	return buffer[0];
+    I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG1, L3G4200D_ZEN_BIT, buffer);
+    return buffer[0];
 }
 
 /** Enables or disables the ability to get Y data
@@ -272,7 +273,7 @@ bool L3G4200D::getZEnabled() {
  * @see L3G4200D_YEN_BIT
  */
 void L3G4200D::setYEnabled(bool enabled) {
-	I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG1, L3G4200D_YEN_BIT, enabled);
+    I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG1, L3G4200D_YEN_BIT, enabled);
 }
 
 /** Get whether Y axis data is enabled
@@ -281,8 +282,8 @@ void L3G4200D::setYEnabled(bool enabled) {
  * @see L3G4200D_YEN_BIT
  */
 bool L3G4200D::getYEnabled() {
-	I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG1, L3G4200D_YEN_BIT, buffer);
-	return buffer[0];
+    I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG1, L3G4200D_YEN_BIT, buffer);
+    return buffer[0];
 }
 
 /** Enables or disables the ability to get X data
@@ -291,7 +292,7 @@ bool L3G4200D::getYEnabled() {
  * @see L3G4200D_XEN_BIT
  */
 void L3G4200D::setXEnabled(bool enabled) {
-	I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG1, L3G4200D_XEN_BIT, enabled);
+    I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG1, L3G4200D_XEN_BIT, enabled);
 }
 
 /** Get whether X axis data is enabled
@@ -300,8 +301,8 @@ void L3G4200D::setXEnabled(bool enabled) {
  * @see L3G4200D_XEN_BIT
  */
 bool L3G4200D::getXEnabled() {
-	I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG1, L3G4200D_XEN_BIT, buffer);
-	return buffer[0];
+    I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG1, L3G4200D_XEN_BIT, buffer);
+    return buffer[0];
 }
 
 // CTRL_REG2 register, r/w
@@ -317,8 +318,8 @@ bool L3G4200D::getXEnabled() {
  * @see L3G4200D_HPM_AUTORESET
  */
 void L3G4200D::setHighPassMode(uint8_t mode) {
-	I2Cdev::writeBits(devAddr, L3G4200D_RA_CTRL_REG2, L3G4200D_HPM_BIT, 
-		L3G4200D_HPM_LENGTH, mode);
+    I2Cdev::writeBits(devAddr, L3G4200D_RA_CTRL_REG2, L3G4200D_HPM_BIT, 
+        L3G4200D_HPM_LENGTH, mode);
 }
 
 /** Get the high pass mode
@@ -332,9 +333,9 @@ void L3G4200D::setHighPassMode(uint8_t mode) {
  * @see L3G4200D_HPM_AUTORESET
  */
 uint8_t L3G4200D::getHighPassMode() {
-	I2Cdev::readBits(devAddr, L3G4200D_RA_CTRL_REG2, L3G4200D_HPM_BIT, 
-		L3G4200D_HPM_LENGTH, buffer);
-	return buffer[0];
+    I2Cdev::readBits(devAddr, L3G4200D_RA_CTRL_REG2, L3G4200D_HPM_BIT, 
+        L3G4200D_HPM_LENGTH, buffer);
+    return buffer[0];
 }
 
 /** Set the high pass filter cut off frequency level (1 - 10)
@@ -354,8 +355,8 @@ uint8_t L3G4200D::getHighPassMode() {
  * @see L3G4200D_HPCF10
  */
 void L3G4200D::setHighPassFilterCutOffFrequencyLevel(uint8_t level) {
-	I2Cdev::writeBits(devAddr, L3G4200D_RA_CTRL_REG2, L3G4200D_HPCF_BIT, 
-		L3G4200D_HPCF_LENGTH, level);
+    I2Cdev::writeBits(devAddr, L3G4200D_RA_CTRL_REG2, L3G4200D_HPCF_BIT, 
+        L3G4200D_HPCF_LENGTH, level);
 }
 
 /** Get the high pass filter cut off frequency level (1 - 10)
@@ -375,9 +376,9 @@ void L3G4200D::setHighPassFilterCutOffFrequencyLevel(uint8_t level) {
  * @see L3G4200D_HPCF10
  */
 uint8_t L3G4200D::getHighPassFilterCutOffFrequencyLevel() {
-	I2Cdev::readBits(devAddr, L3G4200D_RA_CTRL_REG2, L3G4200D_HPCF_BIT, 
-		L3G4200D_HPCF_LENGTH, buffer);
-	return buffer[0];
+    I2Cdev::readBits(devAddr, L3G4200D_RA_CTRL_REG2, L3G4200D_HPCF_BIT, 
+        L3G4200D_HPCF_LENGTH, buffer);
+    return buffer[0];
 }
 
 // CTRL_REG3 register, r/w
@@ -388,8 +389,8 @@ uint8_t L3G4200D::getHighPassFilterCutOffFrequencyLevel() {
  * @see L3G4200D_I1_INT1_BIT
  */
 void L3G4200D::setINT1InterruptEnabled(bool enabled) {
-	I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_I1_INT1_BIT, 
-		enabled);
+    I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_I1_INT1_BIT, 
+        enabled);
 }
 
 /** Get the INT1 interrupt enabled state
@@ -398,9 +399,9 @@ void L3G4200D::setINT1InterruptEnabled(bool enabled) {
  * @see L3G4200D_I1_INT1_BIT
  */
 bool L3G4200D::getINT1InterruptEnabled() {
-	I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_I1_INT1_BIT, 
-		buffer);
-	return buffer[0];
+    I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_I1_INT1_BIT, 
+        buffer);
+    return buffer[0];
 }
 
 /** Set the INT1 boot status enabled state
@@ -409,8 +410,8 @@ bool L3G4200D::getINT1InterruptEnabled() {
  * @see L3G4200D_I1_BOOT_BIT
  */
 void L3G4200D::setINT1BootStatusEnabled(bool enabled) {
-	I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_I1_BOOT_BIT, 
-		enabled);
+    I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_I1_BOOT_BIT, 
+        enabled);
 }
 
 /** Get the INT1 boot status enabled state
@@ -419,9 +420,9 @@ void L3G4200D::setINT1BootStatusEnabled(bool enabled) {
  * @see L3G4200D_I1_BOOT_BIT
  */
 bool L3G4200D::getINT1BootStatusEnabled() {
-	I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_I1_BOOT_BIT, 
-		buffer);
-	return buffer[0];
+    I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_I1_BOOT_BIT, 
+        buffer);
+    return buffer[0];
 }
 
 /** Interrupts the active INT1 configuration
@@ -429,7 +430,7 @@ bool L3G4200D::getINT1BootStatusEnabled() {
  * @see L3G4200D_H_LACTIVE_BIT
  */
 void L3G4200D::interruptActiveINT1Config() {
-	I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_H_LACTIVE_BIT, 1);
+    I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_H_LACTIVE_BIT, 1);
 }
 
 /** Set output mode to push-pull or open-drain
@@ -440,8 +441,8 @@ void L3G4200D::interruptActiveINT1Config() {
  * @see L3G4200D_OPEN_DRAIN
  */
 void L3G4200D::setOutputMode(bool mode) {
-	I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_PP_OD_BIT, 
-		mode);
+    I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_PP_OD_BIT, 
+        mode);
 }
 
 /** Get whether mode is push-pull or open drain
@@ -452,9 +453,9 @@ void L3G4200D::setOutputMode(bool mode) {
  * @see L3G4200D_OPEN_DRAIN
  */
 bool L3G4200D::getOutputMode() {
-	I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_PP_OD_BIT, 
-		buffer);
-	return buffer[0];
+    I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_PP_OD_BIT, 
+        buffer);
+    return buffer[0];
 }
 
 /** Set data ready interrupt enabled state on INT2 pin
@@ -463,8 +464,8 @@ bool L3G4200D::getOutputMode() {
  * @see L3G4200D_I2_DRDY_BIT
  */
 void L3G4200D::setINT2DataReadyEnabled(bool enabled) {
-	I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_I2_DRDY_BIT, 
-		enabled);
+    I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_I2_DRDY_BIT, 
+        enabled);
 }
 
 /** Get whether the data ready interrupt is enabled on the INT2 pin
@@ -473,9 +474,9 @@ void L3G4200D::setINT2DataReadyEnabled(bool enabled) {
  * @see L3G4200D_I2_DRDY_BIT
  */
 bool L3G4200D::getINT2DataReadyEnabled() {
-	I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_I2_DRDY_BIT, 
-		buffer);
-	return buffer[0];
+    I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_I2_DRDY_BIT, 
+        buffer);
+    return buffer[0];
 }
 
 /** Set whether the INT2 FIFO watermark interrupt is enabled
@@ -488,8 +489,8 @@ bool L3G4200D::getINT2DataReadyEnabled() {
  * @see L3G4200D_I2_WTM_BIT
  */
 void L3G4200D::setINT2FIFOWatermarkInterruptEnabled(bool enabled) {
-	I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_I2_WTM_BIT, 
-		enabled);
+    I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_I2_WTM_BIT, 
+        enabled);
 }
 
 /** Get the INT2 FIFO watermark interrupt enabled state
@@ -498,9 +499,9 @@ void L3G4200D::setINT2FIFOWatermarkInterruptEnabled(bool enabled) {
  * @see L3G4200D_I2_WTM_BIT
  */ 
 bool L3G4200D::getINT2FIFOWatermarkInterruptEnabled() {
-	I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_I2_WTM_BIT, 
-		buffer);
-	return buffer[0];
+    I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_I2_WTM_BIT, 
+        buffer);
+    return buffer[0];
 }
 
 /** Set whether an interrupt is triggered on INT2 when the FIFO is overrun
@@ -509,8 +510,8 @@ bool L3G4200D::getINT2FIFOWatermarkInterruptEnabled() {
  * @see L3G4200D_I2_ORUN_BIT
  */
 void L3G4200D::setINT2FIFOOverrunInterruptEnabled(bool enabled) {
-	I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_I2_ORUN_BIT, 
-		enabled);
+    I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_I2_ORUN_BIT, 
+        enabled);
 }
 
 /** Get whether an interrupt is triggered on INT2 when the FIFO is overrun
@@ -519,9 +520,9 @@ void L3G4200D::setINT2FIFOOverrunInterruptEnabled(bool enabled) {
  * @see L3G4200D_I2_ORUN_BIT
  */
 bool L3G4200D::getINT2FIFOOverrunInterruptEnabled() {
-	I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_I2_ORUN_BIT,
-		buffer);
-	return buffer[0];
+    I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_I2_ORUN_BIT,
+        buffer);
+    return buffer[0];
 }
 
 /** Set whether an interrupt is triggered on INT2 when the FIFO buffer is empty
@@ -530,8 +531,8 @@ bool L3G4200D::getINT2FIFOOverrunInterruptEnabled() {
  * @see L3G4200D_I2_EMPTY_BIT
  */
 void L3G4200D::setINT2FIFOEmptyInterruptEnabled(bool enabled) {
-	I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_I2_EMPTY_BIT, 
-		enabled);
+    I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_I2_EMPTY_BIT, 
+        enabled);
 }
 
 /** Get whether the INT2 FIFO empty interrupt is enabled
@@ -540,9 +541,9 @@ void L3G4200D::setINT2FIFOEmptyInterruptEnabled(bool enabled) {
  * @see L3G4200D_I2_EMPTY_BIT
  */
 bool L3G4200D::getINT2FIFOEmptyInterruptEnabled() {
-	I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_I2_EMPTY_BIT, 
-		buffer);
-	return buffer[0];
+    I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG3, L3G4200D_I2_EMPTY_BIT, 
+        buffer);
+    return buffer[0];
 }
 
 // CTRL_REG4 register, r/w
@@ -553,7 +554,7 @@ bool L3G4200D::getINT2FIFOEmptyInterruptEnabled() {
  * @see L3G4200D_BDU_BIT
  */
 void L3G4200D::setBlockDataUpdateEnabled(bool enabled) {
-	I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG4, L3G4200D_BDU_BIT, enabled);
+    I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG4, L3G4200D_BDU_BIT, enabled);
 }
 
 /** Get the BDU enabled state
@@ -562,8 +563,8 @@ void L3G4200D::setBlockDataUpdateEnabled(bool enabled) {
  * @see L3G4200D_BDU_BIT
  */
 bool L3G4200D::getBlockDataUpdateEnabled() {
-	I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG4, L3G4200D_BDU_BIT, buffer);
-	return buffer[0];
+    I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG4, L3G4200D_BDU_BIT, buffer);
+    return buffer[0];
 }
 
 /** Set the data endian modes
@@ -577,8 +578,8 @@ bool L3G4200D::getBlockDataUpdateEnabled() {
  * @see L3G4200D_LITTLE_ENDIAN
  */
 void L3G4200D::setEndianMode(bool endianness) {
-	I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG4, L3G4200D_BLE_BIT, 
-		endianness);
+    I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG4, L3G4200D_BLE_BIT, 
+        endianness);
 }
 
 /** Get the data endian mode
@@ -589,9 +590,9 @@ void L3G4200D::setEndianMode(bool endianness) {
  * @see L3G4200D_LITTLE_ENDIAN
  */
 bool L3G4200D::getEndianMode() {
-	I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG4, L3G4200D_BLE_BIT,
-		buffer);
-	return buffer[0];
+    I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG4, L3G4200D_BLE_BIT,
+        buffer);
+    return buffer[0];
 }
 
 /** Set the full scale of the data output (in dps)
@@ -604,18 +605,18 @@ bool L3G4200D::getEndianMode() {
  * @see L3G4200D_FS_2000
  */
 void L3G4200D::setFullScale(uint16_t scale) {
-	uint8_t writeBits;
-	
-	if (scale == 250) {
-		writeBits = L3G4200D_FS_250;
-	} else if (scale == 500) {
-		writeBits = L3G4200D_FS_500;
-	} else {
-		writeBits = L3G4200D_FS_2000;
-	}
+    uint8_t writeBits;
+    
+    if (scale == 250) {
+        writeBits = L3G4200D_FS_250;
+    } else if (scale == 500) {
+        writeBits = L3G4200D_FS_500;
+    } else {
+        writeBits = L3G4200D_FS_2000;
+    }
 
-	I2Cdev::writeBits(devAddr, L3G4200D_RA_CTRL_REG4, L3G4200D_FS_BIT, 
-		L3G4200D_FS_LENGTH, writeBits);
+    I2Cdev::writeBits(devAddr, L3G4200D_RA_CTRL_REG4, L3G4200D_FS_BIT, 
+        L3G4200D_FS_LENGTH, writeBits);
 }
 
 /** Get the current full scale of the output data (in dps)
@@ -628,17 +629,17 @@ void L3G4200D::setFullScale(uint16_t scale) {
  * @see L3G4200D_FS_2000
  */
 uint16_t L3G4200D::getFullScale() {
-	I2Cdev::readBits(devAddr, L3G4200D_RA_CTRL_REG4, 
-		L3G4200D_FS_BIT, L3G4200D_FS_LENGTH, buffer);
-	uint8_t readBits = buffer[0];
-	
-	if (readBits == L3G4200D_FS_250) {
-		return 250;
-	} else if (readBits == L3G4200D_FS_500) {
-		return 500;
-	} else {
-		return 2000;
-	}
+    I2Cdev::readBits(devAddr, L3G4200D_RA_CTRL_REG4, 
+        L3G4200D_FS_BIT, L3G4200D_FS_LENGTH, buffer);
+    uint8_t readBits = buffer[0];
+    
+    if (readBits == L3G4200D_FS_250) {
+        return 250;
+    } else if (readBits == L3G4200D_FS_500) {
+        return 500;
+    } else {
+        return 2000;
+    }
 }
 
 /** Set the self test mode
@@ -651,8 +652,8 @@ uint16_t L3G4200D::getFullScale() {
  * @see L3G4200D_SELF_TEST_1
  */
 void L3G4200D::setSelfTestMode(uint8_t mode) {
-	I2Cdev::writeBits(devAddr, L3G4200D_RA_CTRL_REG4, L3G4200D_ST_BIT, 
-		L3G4200D_ST_LENGTH, mode);
+    I2Cdev::writeBits(devAddr, L3G4200D_RA_CTRL_REG4, L3G4200D_ST_BIT, 
+        L3G4200D_ST_LENGTH, mode);
 }
 
 /** Get the current self test mode
@@ -665,9 +666,9 @@ void L3G4200D::setSelfTestMode(uint8_t mode) {
  * @see L3G4200D_SELF_TEST_1
  */
 uint8_t L3G4200D::getSelfTestMode() {
-	I2Cdev::readBits(devAddr, L3G4200D_RA_CTRL_REG4, L3G4200D_ST_BIT, 
-		L3G4200D_ST_LENGTH, buffer);
-	return buffer[0];
+    I2Cdev::readBits(devAddr, L3G4200D_RA_CTRL_REG4, L3G4200D_ST_BIT, 
+        L3G4200D_ST_LENGTH, buffer);
+    return buffer[0];
 }
 
 /** Set the SPI mode
@@ -678,7 +679,7 @@ uint8_t L3G4200D::getSelfTestMode() {
  * @see L3G4200D_SPI_3_WIRE
  */
 void L3G4200D::setSPIMode(bool mode) {
-	I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG4, L3G4200D_SIM_BIT, mode);
+    I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG4, L3G4200D_SIM_BIT, mode);
 }
 
 /** Get the SPI mode
@@ -689,9 +690,9 @@ void L3G4200D::setSPIMode(bool mode) {
  * @see L3G4200D_SPI_3_WIRE
  */
 bool L3G4200D::getSPIMode() {
-	I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG4, L3G4200D_SIM_BIT, 
-		buffer);
- 	return buffer[0];
+    I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG4, L3G4200D_SIM_BIT, 
+        buffer);
+    return buffer[0];
 }
 
 // CTRL_REG5 register, r/w
@@ -701,7 +702,7 @@ bool L3G4200D::getSPIMode() {
  * @see L3G4200D_BOOT_BIT
  */
 void L3G4200D::rebootMemoryContent() {
-	I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG5, L3G4200D_BOOT_BIT, true);
+    I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG5, L3G4200D_BOOT_BIT, true);
 }
 
 /** Set whether the FIFO buffer is enabled
@@ -710,8 +711,8 @@ void L3G4200D::rebootMemoryContent() {
  * @see L3G4200D_FIFO_EN_BIT
  */
 void L3G4200D::setFIFOEnabled(bool enabled) {
-	I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG5, L3G4200D_FIFO_EN_BIT, 
-		enabled);
+    I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG5, L3G4200D_FIFO_EN_BIT, 
+        enabled);
 }
 
 /** Get whether the FIFO buffer is enabled
@@ -720,9 +721,9 @@ void L3G4200D::setFIFOEnabled(bool enabled) {
  * @see L3G4200D_FIFO_EN_BIT
  */
 bool L3G4200D::getFIFOEnabled() {
-	I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG5, L3G4200D_FIFO_EN_BIT, 
-		buffer);
-	return buffer[0];
+    I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG5, L3G4200D_FIFO_EN_BIT, 
+        buffer);
+    return buffer[0];
 }
 
 /** Set the high pass filter enabled state
@@ -731,8 +732,8 @@ bool L3G4200D::getFIFOEnabled() {
  * @see L3G4200D_HPEN_BIT
  */
 void L3G4200D::setHighPassFilterEnabled(bool enabled) {
-	I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG5, L3G4200D_HPEN_BIT, 
-		enabled);
+    I2Cdev::writeBit(devAddr, L3G4200D_RA_CTRL_REG5, L3G4200D_HPEN_BIT, 
+        enabled);
 }
 
 /** Get whether the high pass filter is enabled
@@ -741,9 +742,9 @@ void L3G4200D::setHighPassFilterEnabled(bool enabled) {
  * @see L3G4200D_HPEN_BIT
  */
 bool L3G4200D::getHighPassFilterEnabled() {
-	I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG5, L3G4200D_HPEN_BIT,
-		buffer);
-	return buffer[0];
+    I2Cdev::readBit(devAddr, L3G4200D_RA_CTRL_REG5, L3G4200D_HPEN_BIT,
+        buffer);
+    return buffer[0];
 }
 
 /** Sets the filter mode to one of the four provided.
@@ -765,16 +766,16 @@ bool L3G4200D::getHighPassFilterEnabled() {
  * @see L3G4200D_LOW_HIGH_PASS
  */
 void L3G4200D::setDataFilter(uint8_t filter) {
-	if (filter == L3G4200D_HIGH_PASS || filter == L3G4200D_LOW_HIGH_PASS) {
-		setHighPassFilterEnabled(true);
-	} else {
-		setHighPassFilterEnabled(false);
-	}
-	
-	I2Cdev::writeBits(devAddr, L3G4200D_RA_CTRL_REG5, L3G4200D_OUT_SEL_BIT, 
-		L3G4200D_OUT_SEL_LENGTH, filter);
-	I2Cdev::writeBits(devAddr, L3G4200D_RA_CTRL_REG5, L3G4200D_INT1_SEL_BIT, 
-		L3G4200D_INT1_SEL_LENGTH, filter);
+    if (filter == L3G4200D_HIGH_PASS || filter == L3G4200D_LOW_HIGH_PASS) {
+        setHighPassFilterEnabled(true);
+    } else {
+        setHighPassFilterEnabled(false);
+    }
+    
+    I2Cdev::writeBits(devAddr, L3G4200D_RA_CTRL_REG5, L3G4200D_OUT_SEL_BIT, 
+        L3G4200D_OUT_SEL_LENGTH, filter);
+    I2Cdev::writeBits(devAddr, L3G4200D_RA_CTRL_REG5, L3G4200D_INT1_SEL_BIT, 
+        L3G4200D_INT1_SEL_LENGTH, filter);
 }
 
 /** Gets the data filter currently in use
@@ -788,19 +789,19 @@ void L3G4200D::setDataFilter(uint8_t filter) {
  * @see L3G4200D_LOW_HIGH_PASS
  */
 uint8_t L3G4200D::getDataFilter() {
-	I2Cdev::readBits(devAddr, L3G4200D_RA_CTRL_REG5, L3G4200D_OUT_SEL_BIT, 
-		L3G4200D_OUT_SEL_LENGTH, buffer);
-	uint8_t outBits = buffer[0];
+    I2Cdev::readBits(devAddr, L3G4200D_RA_CTRL_REG5, L3G4200D_OUT_SEL_BIT, 
+        L3G4200D_OUT_SEL_LENGTH, buffer);
+    uint8_t outBits = buffer[0];
 
-	if (outBits == L3G4200D_NON_HIGH_PASS || outBits == L3G4200D_HIGH_PASS) {
-		return outBits;
-	}
+    if (outBits == L3G4200D_NON_HIGH_PASS || outBits == L3G4200D_HIGH_PASS) {
+        return outBits;
+    }
 
-	if (getHighPassFilterEnabled()) {
-		return L3G4200D_LOW_HIGH_PASS;
-	} else {
-		return L3G4200D_LOW_PASS;
-	}
+    if (getHighPassFilterEnabled()) {
+        return L3G4200D_LOW_HIGH_PASS;
+    } else {
+        return L3G4200D_LOW_PASS;
+    }
 }
 
 // REFERENCE/DATACAPTURE register, r/w
@@ -810,7 +811,7 @@ uint8_t L3G4200D::getDataFilter() {
  * @see L3G4200D_RA_REFERENCE
  */
 void L3G4200D::setInterruptReference(uint8_t reference) {
-	I2Cdev::writeByte(devAddr, L3G4200D_RA_REFERENCE, reference);
+    I2Cdev::writeByte(devAddr, L3G4200D_RA_REFERENCE, reference);
 }
 
 /** Get the 8-bit reference value for interrupt generation
@@ -818,8 +819,8 @@ void L3G4200D::setInterruptReference(uint8_t reference) {
  * @see L3G4200D_RA_REFERENCE
  */
 uint8_t L3G4200D::getInterruptReference() {
-	I2Cdev::readByte(devAddr, L3G4200D_RA_REFERENCE, buffer);
-	return buffer[0];
+    I2Cdev::readByte(devAddr, L3G4200D_RA_REFERENCE, buffer);
+    return buffer[0];
 }
 
 // OUT_TEMP register, read-only
@@ -829,8 +830,8 @@ uint8_t L3G4200D::getInterruptReference() {
  * @see L3G4200D_RA_OUT_TEMP
  */
 uint8_t L3G4200D::getTemperature() {
-	I2Cdev::readByte(devAddr, L3G4200D_RA_OUT_TEMP, buffer);
-	return buffer[0];
+    I2Cdev::readByte(devAddr, L3G4200D_RA_OUT_TEMP, buffer);
+    return buffer[0];
 }
 
 // STATUS register, read-only
@@ -842,9 +843,9 @@ uint8_t L3G4200D::getTemperature() {
  * @see L3G4200D_ZYXOR_BIT
  */
 bool L3G4200D::getXYZOverrun() {
-	I2Cdev::readBit(devAddr, L3G4200D_RA_STATUS, L3G4200D_ZYXOR_BIT, 
-		buffer);
-	return buffer[0];
+    I2Cdev::readBit(devAddr, L3G4200D_RA_STATUS, L3G4200D_ZYXOR_BIT, 
+        buffer);
+    return buffer[0];
 }
 
 /** Get whether new Z data overwrote the last set of data before it was read
@@ -854,9 +855,9 @@ bool L3G4200D::getXYZOverrun() {
  * @see L3G4200D_ZOR_BIT
  */
 bool L3G4200D::getZOverrun() {
-	I2Cdev::readBit(devAddr, L3G4200D_RA_STATUS, L3G4200D_ZOR_BIT, 
-		buffer);
-	return buffer[0];
+    I2Cdev::readBit(devAddr, L3G4200D_RA_STATUS, L3G4200D_ZOR_BIT, 
+        buffer);
+    return buffer[0];
 }
 
 /** Get whether new Y data overwrote the last set of data before it was read
@@ -866,9 +867,9 @@ bool L3G4200D::getZOverrun() {
  * @see L3G4200D_YOR_BIT
  */
 bool L3G4200D::getYOverrun() {
-	I2Cdev::readBit(devAddr, L3G4200D_RA_STATUS, L3G4200D_YOR_BIT, 
-		buffer);
-	return buffer[0];
+    I2Cdev::readBit(devAddr, L3G4200D_RA_STATUS, L3G4200D_YOR_BIT, 
+        buffer);
+    return buffer[0];
 }
 
 /** Get whether new X data overwrote the last set of data before it was read
@@ -878,9 +879,9 @@ bool L3G4200D::getYOverrun() {
  * @see L3G4200D_XOR_BIT
  */
 bool L3G4200D::getXOverrun() {
-	I2Cdev::readBit(devAddr, L3G4200D_RA_STATUS, L3G4200D_XOR_BIT, 
-		buffer);
-	return buffer[0];
+    I2Cdev::readBit(devAddr, L3G4200D_RA_STATUS, L3G4200D_XOR_BIT, 
+        buffer);
+    return buffer[0];
 }
 
 /** Get whether there is new data avaialable
@@ -889,9 +890,9 @@ bool L3G4200D::getXOverrun() {
  * @see L3G4200D_ZYXDA_BIT
  */
 bool L3G4200D::getXYZDataAvailable() {
-	I2Cdev::readBit(devAddr, L3G4200D_RA_STATUS, L3G4200D_ZYXDA_BIT, 
-		buffer);
-	return buffer[0];
+    I2Cdev::readBit(devAddr, L3G4200D_RA_STATUS, L3G4200D_ZYXDA_BIT, 
+        buffer);
+    return buffer[0];
 }
 
 /** Get whether there is new Z data avaialable
@@ -900,9 +901,9 @@ bool L3G4200D::getXYZDataAvailable() {
  * @see L3G4200D_ZDA_BIT
  */
 bool L3G4200D::getZDataAvailable() {
-	I2Cdev::readBit(devAddr, L3G4200D_RA_STATUS, L3G4200D_ZDA_BIT, 
-		buffer);
-	return buffer[0];
+    I2Cdev::readBit(devAddr, L3G4200D_RA_STATUS, L3G4200D_ZDA_BIT, 
+        buffer);
+    return buffer[0];
 }
 
 /** Get whether there is new Y data avaialable
@@ -911,9 +912,9 @@ bool L3G4200D::getZDataAvailable() {
  * @see L3G4200D_YDA_BIT
  */
 bool L3G4200D::getYDataAvailable() {
-	I2Cdev::readBit(devAddr, L3G4200D_RA_STATUS, L3G4200D_YDA_BIT, 
-		buffer);
-	return buffer[0];
+    I2Cdev::readBit(devAddr, L3G4200D_RA_STATUS, L3G4200D_YDA_BIT, 
+        buffer);
+    return buffer[0];
 }
 
 /** Get whether there is new X data avaialable
@@ -922,9 +923,9 @@ bool L3G4200D::getYDataAvailable() {
  * @see L3G4200D_XDA_BIT
  */
 bool L3G4200D::getXDataAvailable() {
-	I2Cdev::readBit(devAddr, L3G4200D_RA_STATUS, L3G4200D_XDA_BIT, 
-		buffer);
-	return buffer[0];
+    I2Cdev::readBit(devAddr, L3G4200D_RA_STATUS, L3G4200D_XDA_BIT, 
+        buffer);
+    return buffer[0];
 }
 
 // OUT_* registers, read-only
@@ -939,9 +940,9 @@ bool L3G4200D::getXDataAvailable() {
  * @param z 16-bit integer container for the Z-axis angular velocity
  */
 void L3G4200D::getAngularVelocity(int16_t* x, int16_t* y, int16_t* z) {
-	*x = getAngularVelocityX();
-	*y = getAngularVelocityY();
-	*z = getAngularVelocityZ();
+    *x = getAngularVelocityX();
+    *y = getAngularVelocityY();
+    *z = getAngularVelocityZ();
 }
 
 /** Get the angular velocity about the X-axis
@@ -950,26 +951,26 @@ void L3G4200D::getAngularVelocity(int16_t* x, int16_t* y, int16_t* z) {
  * @see L3G4200D_RA_OUT_X_H
  */
 int16_t L3G4200D::getAngularVelocityX() {
-	I2Cdev::readBytes(devAddr, L3G4200D_RA_OUT_X_L, 2, buffer);
-	if (getEndianMode() == L3G4200D_BIG_ENDIAN) {
-		return (((int16_t)buffer[1]) << 8) | buffer[0];
-	} else {
-		return (((int16_t)buffer[0]) << 8) | buffer[1];
-	}
+    I2Cdev::readBytes(devAddr, L3G4200D_RA_OUT_X_L, 2, buffer);
+    if (getEndianMode() == L3G4200D_BIG_ENDIAN) {
+        return (((int16_t)buffer[1]) << 8) | buffer[0];
+    } else {
+        return (((int16_t)buffer[0]) << 8) | buffer[1];
+    }
 }
-	
+    
 /** Get the angular velocity about the Y-axis
  * @return Angular velocity about the Y-axis
  * @see L3G4200D_RA_OUT_Y_L
  * @see L3G4200D_RA_OUT_Y_H
  */
 int16_t L3G4200D::getAngularVelocityY() {
-	I2Cdev::readBytes(devAddr, L3G4200D_RA_OUT_Y_L, 2, buffer);
-	if (getEndianMode() == L3G4200D_BIG_ENDIAN) {
-		return (((int16_t)buffer[1]) << 8) | buffer[0];
-	} else {
-		return (((int16_t)buffer[0]) << 8) | buffer[1];
-	}
+    I2Cdev::readBytes(devAddr, L3G4200D_RA_OUT_Y_L, 2, buffer);
+    if (getEndianMode() == L3G4200D_BIG_ENDIAN) {
+        return (((int16_t)buffer[1]) << 8) | buffer[0];
+    } else {
+        return (((int16_t)buffer[0]) << 8) | buffer[1];
+    }
 }
 
 /** Get the angular velocity about the Z-axis
@@ -978,12 +979,12 @@ int16_t L3G4200D::getAngularVelocityY() {
  * @see L3G4200D_RA_OUT_Z_H
  */
 int16_t L3G4200D::getAngularVelocityZ() {
-	I2Cdev::readBytes(devAddr, L3G4200D_RA_OUT_Z_L, 2, buffer);
-	if (getEndianMode() == L3G4200D_BIG_ENDIAN) {
-		return (((int16_t)buffer[1]) << 8) | buffer[0];
-	} else {
-		return (((int16_t)buffer[0]) << 8) | buffer[1];
-	}
+    I2Cdev::readBytes(devAddr, L3G4200D_RA_OUT_Z_L, 2, buffer);
+    if (getEndianMode() == L3G4200D_BIG_ENDIAN) {
+        return (((int16_t)buffer[1]) << 8) | buffer[0];
+    } else {
+        return (((int16_t)buffer[0]) << 8) | buffer[1];
+    }
 }
 
 // FIFO_CTRL register, r/w
@@ -1000,8 +1001,8 @@ int16_t L3G4200D::getAngularVelocityZ() {
  * @see L3G4200D_FM_BYPASS_STREAM
  */
 void L3G4200D::setFIFOMode(uint8_t mode) {
-	I2Cdev::writeBits(devAddr, L3G4200D_RA_FIFO_CTRL, L3G4200D_FIFO_MODE_BIT, 
-		L3G4200D_FIFO_MODE_LENGTH, mode);
+    I2Cdev::writeBits(devAddr, L3G4200D_RA_FIFO_CTRL, L3G4200D_FIFO_MODE_BIT, 
+        L3G4200D_FIFO_MODE_LENGTH, mode);
 }
 
 /** Get the FIFO mode to one of the defined modes
@@ -1016,9 +1017,9 @@ void L3G4200D::setFIFOMode(uint8_t mode) {
  * @see L3G4200D_FM_BYPASS_STREAM
  */
 uint8_t L3G4200D::getFIFOMode() {
-	I2Cdev::readBits(devAddr, L3G4200D_RA_FIFO_CTRL, 
-		L3G4200D_FIFO_MODE_BIT, L3G4200D_FIFO_MODE_LENGTH, buffer);
-	return buffer[0];
+    I2Cdev::readBits(devAddr, L3G4200D_RA_FIFO_CTRL, 
+        L3G4200D_FIFO_MODE_BIT, L3G4200D_FIFO_MODE_LENGTH, buffer);
+    return buffer[0];
 }
 
 /** Set the FIFO watermark threshold
@@ -1054,9 +1055,9 @@ uint8_t L3G4200D::getFIFOThreshold() {
  * @see L3G4200D_FIFO_STATUS_BIT
  */
 bool L3G4200D::getFIFOAtWatermark() {
-   	I2Cdev::readBit(devAddr, L3G4200D_RA_FIFO_SRC, L3G4200D_FIFO_STATUS_BIT, 
+    I2Cdev::readBit(devAddr, L3G4200D_RA_FIFO_SRC, L3G4200D_FIFO_STATUS_BIT, 
         buffer);
-   	return buffer[0];
+    return buffer[0];
 }
 
 /** Get whether the FIFO buffer is full
@@ -1315,7 +1316,7 @@ bool L3G4200D::getYHigh() {
  * @see L3G4200D_INT1_YL_BIT
  */
 bool L3G4200D::getYLow() {
-   	I2Cdev::readBit(devAddr, L3G4200D_RA_INT1_SRC, L3G4200D_INT1_YL_BIT,
+    I2Cdev::readBit(devAddr, L3G4200D_RA_INT1_SRC, L3G4200D_INT1_YL_BIT,
         buffer);
     return buffer[0];
 }
@@ -1357,8 +1358,8 @@ void L3G4200D::setXHighThreshold(uint8_t threshold) {
  * @see L3G4200D_INT1_THS_XH
  */
 uint8_t L3G4200D::getXHighThreshold() {
-	I2Cdev::readByte(devAddr, L3G4200D_RA_INT1_THS_XH, buffer);
-	return buffer[0];
+    I2Cdev::readByte(devAddr, L3G4200D_RA_INT1_THS_XH, buffer);
+    return buffer[0];
 }
 
 /** Set the threshold for a low interrupt on the X axis
@@ -1374,8 +1375,8 @@ void L3G4200D::setXLowThreshold(uint8_t threshold) {
  * @see L3G4200D_INT1_THS_XL
  */
 uint8_t L3G4200D::getXLowThreshold() {
-	I2Cdev::readByte(devAddr, L3G4200D_RA_INT1_THS_XL, buffer);
-	return buffer[0];
+    I2Cdev::readByte(devAddr, L3G4200D_RA_INT1_THS_XL, buffer);
+    return buffer[0];
 }
 
 /** Set the threshold for a high interrupt on the Y axis
@@ -1391,8 +1392,8 @@ void L3G4200D::setYHighThreshold(uint8_t threshold) {
  * @see L3G4200D_INT1_THS_YH
  */
 uint8_t L3G4200D::getYHighThreshold() {
-	I2Cdev::readByte(devAddr, L3G4200D_RA_INT1_THS_YH, buffer);
-	return buffer[0];
+    I2Cdev::readByte(devAddr, L3G4200D_RA_INT1_THS_YH, buffer);
+    return buffer[0];
 }
 
 /** Set the threshold for a low interrupt on the Y axis
@@ -1408,8 +1409,8 @@ void L3G4200D::setYLowThreshold(uint8_t threshold) {
  * @see L3G4200D_INT1_THS_YL
  */
 uint8_t L3G4200D::getYLowThreshold() {
-	I2Cdev::readByte(devAddr, L3G4200D_RA_INT1_THS_YL, buffer);
-	return buffer[0];
+    I2Cdev::readByte(devAddr, L3G4200D_RA_INT1_THS_YL, buffer);
+    return buffer[0];
 }
 
 /** Set the threshold for a high interrupt on the Z axis
@@ -1425,8 +1426,8 @@ void L3G4200D::setZHighThreshold(uint8_t threshold) {
  * @see L3G4200D_INT1_THS_ZH
  */
 uint8_t L3G4200D::getZHighThreshold() {
-	I2Cdev::readByte(devAddr, L3G4200D_RA_INT1_THS_ZH, buffer);
-	return buffer[0];
+    I2Cdev::readByte(devAddr, L3G4200D_RA_INT1_THS_ZH, buffer);
+    return buffer[0];
 }
 
 /** Set the threshold for a low interrupt on the Z axis
@@ -1442,8 +1443,8 @@ void L3G4200D::setZLowThreshold(uint8_t threshold) {
  * @see L3G4200D_INT1_THS_ZL
  */
 uint8_t L3G4200D::getZLowThreshold() {
-	I2Cdev::readByte(devAddr, L3G4200D_RA_INT1_THS_ZL, buffer);
-	return buffer[0];
+    I2Cdev::readByte(devAddr, L3G4200D_RA_INT1_THS_ZL, buffer);
+    return buffer[0];
 }
 
 // INT1_DURATION register, r/w
@@ -1457,8 +1458,8 @@ uint8_t L3G4200D::getZLowThreshold() {
  * @see L3G4200D_INT1_DUR_LENGTH
  */
 void L3G4200D::setDuration(uint8_t duration) {
-	I2Cdev::writeBits(devAddr, L3G4200D_RA_INT1_DURATION, L3G4200D_INT1_DUR_BIT,
-		L3G4200D_INT1_DUR_LENGTH, duration);
+    I2Cdev::writeBits(devAddr, L3G4200D_RA_INT1_DURATION, L3G4200D_INT1_DUR_BIT,
+        L3G4200D_INT1_DUR_LENGTH, duration);
 }
 
 /** Get the minimum duration for an interrupt event to be recognized
@@ -1468,9 +1469,9 @@ void L3G4200D::setDuration(uint8_t duration) {
  * @see L3G4200D_INT1_DUR_LENGTH
  */
 uint8_t L3G4200D::getDuration() {
-	I2Cdev::readBits(devAddr, L3G4200D_RA_INT1_DURATION, 
-		L3G4200D_INT1_DUR_BIT, L3G4200D_INT1_DUR_LENGTH, buffer);
-	return buffer[0];
+    I2Cdev::readBits(devAddr, L3G4200D_RA_INT1_DURATION, 
+        L3G4200D_INT1_DUR_BIT, L3G4200D_INT1_DUR_LENGTH, buffer);
+    return buffer[0];
 }
 
 /** Set whether the interrupt wait feature is enabled
@@ -1483,8 +1484,8 @@ uint8_t L3G4200D::getDuration() {
  * @see L3G4200D_INT1_WAIT_BIT
  */
 void L3G4200D::setWaitEnabled(bool enabled) {
-	I2Cdev::writeBit(devAddr, L3G4200D_RA_INT1_DURATION, L3G4200D_INT1_WAIT_BIT,
-		enabled);
+    I2Cdev::writeBit(devAddr, L3G4200D_RA_INT1_DURATION, L3G4200D_INT1_WAIT_BIT,
+        enabled);
 }
 
 /** Get whether the interrupt wait feature is enabled
@@ -1493,7 +1494,7 @@ void L3G4200D::setWaitEnabled(bool enabled) {
  * @see L3G4200D_INT1_WAIT_BIT
  */
 bool L3G4200D::getWaitEnabled() {
-	I2Cdev::readBit(devAddr, L3G4200D_RA_INT1_DURATION, 
-		L3G4200D_INT1_WAIT_BIT, buffer);
-	return buffer[0];
+    I2Cdev::readBit(devAddr, L3G4200D_RA_INT1_DURATION, 
+        L3G4200D_INT1_WAIT_BIT, buffer);
+    return buffer[0];
 }
