@@ -62,16 +62,21 @@ void LSM9DS0::initialize() {
     I2Cdev::writeByte(devAddrGyro, LSM9DS0_RA_CTRL_REG1, 0b00001111);
     I2Cdev::writeByte(devAddrGyro, LSM9DS0_RA_CTRL_REG2, 0b00000000);
     I2Cdev::writeByte(devAddrGyro, LSM9DS0_RA_CTRL_REG3, 0b00000000);
-    I2Cdev::writeByte(devAddrGyro, LSM9DS0_RA_CTRL_REG4, 0b00000000);
+    I2Cdev::writeByte(devAddrGyro, LSM9DS0_RA_CTRL_REG4, 0b10000000);
     I2Cdev::writeByte(devAddrGyro, LSM9DS0_RA_CTRL_REG5, 0b00000000);
 
-    I2Cdev::writeByte(devAddrMagAcc, LSM9DS0_RA_CTRL_REG1_XM, 0b00001111);
+    I2Cdev::writeByte(devAddrMagAcc, LSM9DS0_RA_CTRL_REG0_XM, 0b00000000);
+    I2Cdev::writeByte(devAddrMagAcc, LSM9DS0_RA_CTRL_REG1_XM, 0b01101111);
     I2Cdev::writeByte(devAddrMagAcc, LSM9DS0_RA_CTRL_REG2_XM, 0b00000000);
     I2Cdev::writeByte(devAddrMagAcc, LSM9DS0_RA_CTRL_REG3_XM, 0b00000000);
-    I2Cdev::writeByte(devAddrMagAcc, LSM9DS0_RA_CTRL_REG4_XM, 0b00000000);
+    I2Cdev::writeByte(devAddrMagAcc, LSM9DS0_RA_CTRL_REG4_XM, 0b10000000);
     I2Cdev::writeByte(devAddrMagAcc, LSM9DS0_RA_CTRL_REG5_XM, 0b10010000);
     I2Cdev::writeByte(devAddrMagAcc, LSM9DS0_RA_CTRL_REG6_XM, 0b00100000);
     I2Cdev::writeByte(devAddrMagAcc, LSM9DS0_RA_CTRL_REG7_XM, 0b00000000);
+
+    acc_scale = 0.061 / 1000. * 9.81;
+    mag_scale = 0.16  / 1000.;
+    gyr_scale = 8.75  / 1000.;
 }
 
 /** Verify the I2C connection.
@@ -79,7 +84,8 @@ void LSM9DS0::initialize() {
  * @return True if connection is valid, false otherwise
  */
 bool LSM9DS0::testConnection() {
-    return getDeviceID() == 0b11010100;
+    return (getDeviceID() == 0b11010100) &&
+           (getDeviceIDMagAcc() == 0b01001001);
 }
 
 // WHO_AM_I register, read-only
@@ -91,6 +97,11 @@ bool LSM9DS0::testConnection() {
  */
 uint8_t LSM9DS0::getDeviceID() {
     I2Cdev::readByte(devAddrGyro, LSM9DS0_RA_WHO_AM_I, buffer);
+    return buffer[0];
+}
+
+uint8_t LSM9DS0::getDeviceIDMagAcc() {
+    I2Cdev::readByte(devAddrMagAcc, LSM9DS0_RA_WHO_AM_I, buffer);
     return buffer[0];
 }
 
@@ -106,21 +117,9 @@ uint8_t LSM9DS0::getDeviceID() {
  * @see LSM9DS0_RATE_400
  * @see LSM9DS0_RATE_800
  */
-void LSM9DS0::setGyroOutputDataRate(uint16_t rate) {
-    uint8_t writeVal;
-    
-    if (rate == 100) {
-        writeVal = LSM9DS0_RATE_100;
-    } else if (rate == 200) {
-        writeVal = LSM9DS0_RATE_200;
-    } else if (rate == 400) {
-        writeVal = LSM9DS0_RATE_400;
-    } else {
-        writeVal = LSM9DS0_RATE_800;
-    }
-    
+void LSM9DS0::setGyroOutputDataRate(gyro_rate_t rate) {
     I2Cdev::writeBits(devAddrGyro, LSM9DS0_RA_CTRL_REG1, LSM9DS0_ODR_BIT,
-        LSM9DS0_ODR_LENGTH, writeVal); 
+        LSM9DS0_ODR_LENGTH, rate);
 }
 
 /** Get the current output data rate
@@ -133,19 +132,11 @@ void LSM9DS0::setGyroOutputDataRate(uint16_t rate) {
  * @see LSM9DS0_RATE_400
  * @see LSM9DS0_RATE_800
  */
-uint16_t LSM9DS0::getGyroOutputDataRate() {
+gyro_rate_t LSM9DS0::getGyroOutputDataRate() {
     I2Cdev::readBits(devAddrGyro, LSM9DS0_RA_CTRL_REG1, LSM9DS0_ODR_BIT, 
         LSM9DS0_ODR_LENGTH, buffer);
     uint8_t rate = buffer[0];
-
-    if (rate == LSM9DS0_RATE_100) {
-        return 100;
-    } else if (rate == LSM9DS0_RATE_200) {
-        return 200;
-    } else if (rate == LSM9DS0_RATE_400) {
-        return 400;
-    }
-    return 800;
+    return (gyro_rate_t) rate;
 }
 
 /** Set the bandwidth cut-off mode
@@ -158,8 +149,8 @@ uint16_t LSM9DS0::getGyroOutputDataRate() {
  * @see LSM9DS0_BW_MED_HIGH
  * @see LSM9DS0_BW_HIGH
  */
-void LSM9DS0::setGyroBandwidthCutOffMode(uint8_t mode) {
-    I2Cdev::writeBits(devAddrGyro, LSM9DS0_RA_CTRL_REG1, LSM9DS0_BW_BIT, 
+void LSM9DS0::setGyroBandwidthCutOffMode(gyro_bandwidth_t mode) {
+    I2Cdev::writeBits(devAddrGyro, LSM9DS0_RA_CTRL_REG1, LSM9DS0_BW_BIT,
         LSM9DS0_BW_LENGTH, mode);
 }
 
@@ -173,10 +164,10 @@ void LSM9DS0::setGyroBandwidthCutOffMode(uint8_t mode) {
  * @see LSM9DS0_BW_MED_HIGH
  * @see LSM9DS0_BW_HIGH
  */
-uint8_t LSM9DS0::getGyroBandwidthCutOffMode() {
+gyro_bandwidth_t LSM9DS0::getGyroBandwidthCutOffMode() {
     I2Cdev::readBits(devAddrGyro, LSM9DS0_RA_CTRL_REG1, LSM9DS0_BW_BIT, 
         LSM9DS0_BW_LENGTH, buffer);
-    return buffer[0];
+    return (gyro_bandwidth_t) buffer[0];
 }
 
 /** Gets the current bandwidth cutoff based on ODR and BW
@@ -618,10 +609,13 @@ void LSM9DS0::setGyroFullScale(uint16_t scale) {
 
     if (scale == 250) {
         writeBits = LSM9DS0_FS_250;
+        gyr_scale = 8.75 / 1000.;
     } else if (scale == 500) {
         writeBits = LSM9DS0_FS_500;
+        gyr_scale = 17.5 / 1000.;
     } else {
         writeBits = LSM9DS0_FS_2000;
+        gyr_scale = 70 / 1000.;
     }
 
     I2Cdev::writeBits(devAddrGyro, LSM9DS0_RA_CTRL_REG4, LSM9DS0_FS_BIT, 
@@ -711,7 +705,8 @@ bool LSM9DS0::getGyroSPIMode() {
  * @see LSM9DS0_BOOT_BIT
  */
 void LSM9DS0::rebootMemoryContent() {
-    I2Cdev::writeBit(devAddrGyro, LSM9DS0_RA_CTRL_REG5, LSM9DS0_BOOT_BIT, true);
+  I2Cdev::writeBit(devAddrGyro, LSM9DS0_RA_CTRL_REG5, LSM9DS0_BOOT_BIT, true);
+  I2Cdev::writeBit(devAddrMagAcc, LSM9DS0_RA_CTRL_REG0_XM, LSM9DS0_XM_BOOT_BIT, true);
 }
 
 /** Set whether the FIFO buffer is enabled
@@ -719,9 +714,9 @@ void LSM9DS0::rebootMemoryContent() {
  * @see LSM9DS0_RA_CTRL_REG5
  * @see LSM9DS0_FIFO_EN_BIT
  */
-void LSM9DS0::setGyroFIFOEnabled(bool enabled) {
-    I2Cdev::writeBit(devAddrGyro, LSM9DS0_RA_CTRL_REG5, LSM9DS0_FIFO_EN_BIT, 
-        enabled);
+void LSM9DS0::setFIFOEnabled(bool enabled) {
+  I2Cdev::writeBit(devAddrGyro, LSM9DS0_RA_CTRL_REG5, LSM9DS0_FIFO_EN_BIT, enabled);
+  I2Cdev::writeBit(devAddrMagAcc, LSM9DS0_RA_CTRL_REG0_XM, LSM9DS0_XM_FIFO_EN_BIT, enabled);
 }
 
 /** Get whether the FIFO buffer is enabled
@@ -729,10 +724,10 @@ void LSM9DS0::setGyroFIFOEnabled(bool enabled) {
  * @see LSM9DS0_RA_CTRL_REG5
  * @see LSM9DS0_FIFO_EN_BIT
  */
-bool LSM9DS0::getGyroFIFOEnabled() {
-    I2Cdev::readBit(devAddrGyro, LSM9DS0_RA_CTRL_REG5, LSM9DS0_FIFO_EN_BIT, 
-        buffer);
-    return buffer[0];
+bool LSM9DS0::getFIFOEnabled() {
+    I2Cdev::readBit(devAddrGyro, LSM9DS0_RA_CTRL_REG5, LSM9DS0_FIFO_EN_BIT, buffer);
+    I2Cdev::readBit(devAddrGyro, LSM9DS0_RA_CTRL_REG0_XM, LSM9DS0_XM_FIFO_EN_BIT, &buffer[1]);
+    return buffer[0] && buffer[1];
 }
 
 /** Set the high pass filter enabled state
@@ -829,17 +824,6 @@ void LSM9DS0::setGyroInterruptReference(uint8_t reference) {
  */
 uint8_t LSM9DS0::getGyroInterruptReference() {
     I2Cdev::readByte(devAddrGyro, LSM9DS0_RA_REFERENCE, buffer);
-    return buffer[0];
-}
-
-// OUT_TEMP register, read-only
-
-/** Gets the current temperature reading from the sensor
- * @return Current temperature
- * @see LSM9DS0_RA_OUT_TEMP
- */
-uint8_t LSM9DS0::getGyroTemperature() {
-    I2Cdev::readByte(devAddrGyro, LSM9DS0_RA_OUT_TEMP, buffer);
     return buffer[0];
 }
 
@@ -960,12 +944,8 @@ void LSM9DS0::getAngularVelocity(int16_t* x, int16_t* y, int16_t* z) {
  * @see LSM9DS0_RA_OUT_X_H
  */
 int16_t LSM9DS0::getAngularVelocityX() {
-    I2Cdev::readBytes(devAddrGyro, LSM9DS0_RA_OUT_X_L, 2, buffer);
-    if (getGyroEndianMode() == LSM9DS0_BIG_ENDIAN) {
-        return (((int16_t)buffer[1]) << 8) | buffer[0];
-    } else {
-        return (((int16_t)buffer[0]) << 8) | buffer[1];
-    }
+    I2Cdev::readBytes(devAddrGyro, BIT_AUTOINCREMENT|LSM9DS0_RA_OUT_X_L, 2, buffer);
+    return ((int16_t*) buffer)[0];
 }
     
 /** Get the angular velocity about the Y-axis
@@ -974,12 +954,8 @@ int16_t LSM9DS0::getAngularVelocityX() {
  * @see LSM9DS0_RA_OUT_Y_H
  */
 int16_t LSM9DS0::getAngularVelocityY() {
-    I2Cdev::readBytes(devAddrGyro, LSM9DS0_RA_OUT_Y_L, 2, buffer);
-    if (getGyroEndianMode() == LSM9DS0_BIG_ENDIAN) {
-        return (((int16_t)buffer[1]) << 8) | buffer[0];
-    } else {
-        return (((int16_t)buffer[0]) << 8) | buffer[1];
-    }
+    I2Cdev::readBytes(devAddrGyro, BIT_AUTOINCREMENT|LSM9DS0_RA_OUT_Y_L, 2, buffer);
+    return ((int16_t*) buffer)[0];
 }
 
 /** Get the angular velocity about the Z-axis
@@ -988,12 +964,8 @@ int16_t LSM9DS0::getAngularVelocityY() {
  * @see LSM9DS0_RA_OUT_Z_H
  */
 int16_t LSM9DS0::getAngularVelocityZ() {
-    I2Cdev::readBytes(devAddrGyro, LSM9DS0_RA_OUT_Z_L, 2, buffer);
-    if (getGyroEndianMode() == LSM9DS0_BIG_ENDIAN) {
-        return (((int16_t)buffer[1]) << 8) | buffer[0];
-    } else {
-        return (((int16_t)buffer[0]) << 8) | buffer[1];
-    }
+    I2Cdev::readBytes(devAddrGyro, BIT_AUTOINCREMENT|LSM9DS0_RA_OUT_Z_L, 2, buffer);
+    return ((int16_t*) buffer)[0];
 }
 
 // FIFO_CTRL register, r/w
@@ -1009,8 +981,10 @@ int16_t LSM9DS0::getAngularVelocityZ() {
  * @see LSM9DS0_FM_STREAM_FIFO
  * @see LSM9DS0_FM_BYPASS_STREAM
  */
-void LSM9DS0::setGyroFIFOMode(uint8_t mode) {
+void LSM9DS0::setFIFOMode(lsm9ds0_fifo_mode_t mode) {
     I2Cdev::writeBits(devAddrGyro, LSM9DS0_RA_FIFO_CTRL, LSM9DS0_FIFO_MODE_BIT, 
+        LSM9DS0_FIFO_MODE_LENGTH, mode);
+    I2Cdev::writeBits(devAddrMagAcc, LSM9DS0_RA_FIFO_CTRL_REG, LSM9DS0_FIFO_MODE_BIT, 
         LSM9DS0_FIFO_MODE_LENGTH, mode);
 }
 
@@ -1025,10 +999,10 @@ void LSM9DS0::setGyroFIFOMode(uint8_t mode) {
  * @see LSM9DS0_FM_STREAM_FIFO
  * @see LSM9DS0_FM_BYPASS_STREAM
  */
-uint8_t LSM9DS0::getGyroFIFOMode() {
+lsm9ds0_fifo_mode_t LSM9DS0::getFIFOMode() {
     I2Cdev::readBits(devAddrGyro, LSM9DS0_RA_FIFO_CTRL, 
         LSM9DS0_FIFO_MODE_BIT, LSM9DS0_FIFO_MODE_LENGTH, buffer);
-    return buffer[0];
+    return (lsm9ds0_fifo_mode_t) buffer[0];
 }
 
 /** Set the FIFO watermark threshold
@@ -1042,6 +1016,11 @@ void LSM9DS0::setGyroFIFOThreshold(uint8_t wtm) {
         LSM9DS0_FIFO_WTM_LENGTH, wtm);
 }
 
+void LSM9DS0::setMagAccFIFOThreshold(uint8_t wtm) {
+    I2Cdev::writeBits(devAddrMagAcc, LSM9DS0_RA_FIFO_CTRL_REG, LSM9DS0_FIFO_WTM_BIT,
+        LSM9DS0_FIFO_WTM_LENGTH, wtm);
+}
+
 /** Get the FIFO watermark threshold
  * @return FIFO watermark threshold
  * @see LSM9DS0_RA_FIFO_CTRL
@@ -1049,6 +1028,12 @@ void LSM9DS0::setGyroFIFOThreshold(uint8_t wtm) {
  * @see LSM9DS0_FIFO_WTM_LENGTH
  */
 uint8_t LSM9DS0::getGyroFIFOThreshold() {
+    I2Cdev::readBits(devAddrGyro, LSM9DS0_RA_FIFO_CTRL, LSM9DS0_FIFO_WTM_BIT,
+        LSM9DS0_FIFO_WTM_LENGTH, buffer);
+    return buffer[0];
+}
+
+uint8_t LSM9DS0::getMagAccFIFOThreshold() {
     I2Cdev::readBits(devAddrGyro, LSM9DS0_RA_FIFO_CTRL, LSM9DS0_FIFO_WTM_BIT,
         LSM9DS0_FIFO_WTM_LENGTH, buffer);
     return buffer[0];
@@ -1102,6 +1087,55 @@ uint8_t LSM9DS0::getGyroFIFOStoredDataLevel() {
         LSM9DS0_FIFO_FSS_BIT, LSM9DS0_FIFO_FSS_LENGTH, buffer);
     return buffer[0];
 }
+
+/** Get whether the number of data sets in the FIFO buffer is less than the 
+ * watermark
+ * @return True if the number of data sets in the FIFO buffer is more than or 
+ * equal to the watermark, false otherwise.
+ * @see LSM9DS0_RA_FIFO_SRC
+ * @see LSM9DS0_FIFO_STATUS_BIT
+ */
+bool LSM9DS0::getMagAccFIFOAtWatermark() {
+    I2Cdev::readBit(devAddrMagAcc, LSM9DS0_RA_FIFO_SRC_REG,
+        LSM9DS0_FIFO_STATUS_BIT, buffer);
+    return buffer[0];
+}
+
+/** Get whether the FIFO buffer is full
+ * @return True if the FIFO buffer is full, false otherwise
+ * @see LSM9DS0_RA_FIFO_SRC
+ * @see LSM9DS0_FIFO_OVRN_BIT
+ */
+bool LSM9DS0::getMagAccFIFOOverrun() {
+    I2Cdev::readBit(devAddrMagAcc, LSM9DS0_RA_FIFO_SRC_REG, 
+        LSM9DS0_FIFO_OVRN_BIT, buffer);
+    return buffer[0];
+}
+
+/** Get whether the FIFO buffer is empty
+ * @return True if the FIFO buffer is empty, false otherwise
+ * @see LSM9DS0_RA_FIFO_SRC
+ * @see LSM9DS0_FIFO_EMPTY_BIT
+ */
+bool LSM9DS0::getMagAccFIFOEmpty() {
+    I2Cdev::readBit(devAddrMagAcc, LSM9DS0_RA_FIFO_SRC_REG,
+        LSM9DS0_FIFO_EMPTY_BIT, buffer);
+    return buffer[0];
+}
+
+/** Get the number of filled FIFO buffer slots
+ * @return Number of filled slots in the FIFO buffer
+ * @see LSM9DS0_RA_FIFO_SRC
+ * @see LSM9DS0_FIFO_FSS_BIT
+ * @see LSM9DS0_FIFO_FSS_LENGTH
+ */ 
+uint8_t LSM9DS0::getMagAccFIFOStoredDataLevel() {
+    I2Cdev::readBits(devAddrMagAcc, LSM9DS0_RA_FIFO_SRC_REG,
+        LSM9DS0_FIFO_FSS_BIT, LSM9DS0_FIFO_FSS_LENGTH, buffer);
+    return buffer[0];
+}
+
+
 
 // INT1_CFG register, r/w
 
@@ -1515,10 +1549,342 @@ bool LSM9DS0::getGyroWaitEnabled() {
  */
 int16_t LSM9DS0::getTemperature() {
   int16_t temperature = 0;
-  I2Cdev::readWord(devAddrMagAcc, LSM9DS0_RA_OUT_TEMP_XM, (uint16_t*) &temperature);
+  I2Cdev::readWord(devAddrMagAcc, BIT_AUTOINCREMENT|LSM9DS0_RA_OUT_TEMP_XM, (uint16_t*) &temperature);
   return temperature;
 }
 
 float LSM9DS0::getTemperatureCelsius() {
   return getTemperature() / 800.;
+}
+
+bool LSM9DS0::getMagXYZOverrun() {
+  I2Cdev::readBit(devAddrMagAcc, LSM9DS0_RA_STATUS_REG_M,
+      LSM9DS0_ZYXOR_BIT, buffer);
+  return buffer[0];
+}
+
+bool LSM9DS0::getMagZOverrun() {
+  I2Cdev::readBit(devAddrMagAcc, LSM9DS0_RA_STATUS_REG_M,
+      LSM9DS0_ZOR_BIT, buffer);
+  return buffer[0];
+}
+
+bool LSM9DS0::getMagYOverrun() {
+  I2Cdev::readBit(devAddrMagAcc, LSM9DS0_RA_STATUS_REG_M,
+      LSM9DS0_YOR_BIT, buffer);
+  return buffer[0];
+}
+
+bool LSM9DS0::getMagXOverrun() {
+  I2Cdev::readBit(devAddrMagAcc, LSM9DS0_RA_STATUS_REG_M,
+      LSM9DS0_XOR_BIT, buffer);
+  return buffer[0];
+}
+
+bool LSM9DS0::getMagXYZDataAvailable() {
+  I2Cdev::readBit(devAddrMagAcc, LSM9DS0_RA_STATUS_REG_M,
+      LSM9DS0_ZYXDA_BIT, buffer);
+  return buffer[0];
+}
+
+bool LSM9DS0::getMagZDataAvailable() {
+  I2Cdev::readBit(devAddrMagAcc, LSM9DS0_RA_STATUS_REG_M,
+      LSM9DS0_ZDA_BIT, buffer);
+  return buffer[0];
+}
+
+bool LSM9DS0::getMagYDataAvailable() {
+  I2Cdev::readBit(devAddrMagAcc, LSM9DS0_RA_STATUS_REG_M,
+      LSM9DS0_YDA_BIT, buffer);
+  return buffer[0];
+}
+
+bool LSM9DS0::getMagXDataAvailable() {
+  I2Cdev::readBit(devAddrMagAcc, LSM9DS0_RA_STATUS_REG_M,
+      LSM9DS0_XDA_BIT, buffer);
+  return buffer[0];
+}
+
+void LSM9DS0::getMagneticFieldStrength(int16_t* x, int16_t* y, int16_t* z) {
+  *x = getMagneticFieldStrengthX();
+  *y = getMagneticFieldStrengthY();
+  *z = getMagneticFieldStrengthZ();
+}
+
+int16_t LSM9DS0::getMagneticFieldStrengthX() {
+  I2Cdev::readBytes(devAddrMagAcc, BIT_AUTOINCREMENT|LSM9DS0_RA_OUT_X_M, 2, buffer);
+  return (((int16_t)buffer[0]) << 8) | buffer[1];
+}
+
+int16_t LSM9DS0::getMagneticFieldStrengthY() {
+  I2Cdev::readBytes(devAddrMagAcc, BIT_AUTOINCREMENT|LSM9DS0_RA_OUT_Y_M, 2, buffer);
+  return (((int16_t)buffer[0]) << 8) | buffer[1];
+}
+
+int16_t LSM9DS0::getMagneticFieldStrengthZ() {
+  I2Cdev::readBytes(devAddrMagAcc, BIT_AUTOINCREMENT|LSM9DS0_RA_OUT_Z_M, 2, buffer);
+  return (((int16_t)buffer[0]) << 8) | buffer[1];
+}
+
+bool LSM9DS0::getMagXAxisInterrupt() {
+  I2Cdev::readBit(devAddrMagAcc, LSM9DS0_RA_INT_CTRL_REG_M, LSM9DS0_XMIEN_BIT, buffer);
+  return buffer[0];
+}
+
+void LSM9DS0::setMagXAxisInterrupt(bool enable) {
+  I2Cdev::writeBit(devAddrMagAcc, LSM9DS0_RA_INT_CTRL_REG_M, LSM9DS0_XMIEN_BIT, enable);
+}
+
+bool LSM9DS0::getMagYAxisInterrupt() {
+  I2Cdev::readBit(devAddrMagAcc, LSM9DS0_RA_INT_CTRL_REG_M, LSM9DS0_YMIEN_BIT, buffer);
+  return buffer[0];
+}
+
+void LSM9DS0::setMagYAxisInterrupt(bool enable) {
+  I2Cdev::writeBit(devAddrMagAcc, LSM9DS0_RA_INT_CTRL_REG_M, LSM9DS0_YMIEN_BIT, enable);
+}
+
+bool LSM9DS0::getMagZAxisInterrupt() {
+  I2Cdev::readBit(devAddrMagAcc, LSM9DS0_RA_INT_CTRL_REG_M, LSM9DS0_ZMIEN_BIT, buffer);
+  return buffer[0];
+}
+
+void LSM9DS0::setMagZAxisInterrupt(bool enable) {
+  I2Cdev::writeBit(devAddrMagAcc, LSM9DS0_RA_INT_CTRL_REG_M, LSM9DS0_ZMIEN_BIT, enable);
+}
+
+bool LSM9DS0::getMagAccInterruptOpenDrain() {
+  I2Cdev::readBit(devAddrMagAcc, LSM9DS0_RA_INT_CTRL_REG_M, LSM9DS0_PP_OD_BIT, buffer);
+  return buffer[0];
+}
+
+void LSM9DS0::setMagAccInterruptOpenDrain(bool isopendrain) {
+  I2Cdev::writeBit(devAddrMagAcc, LSM9DS0_RA_INT_CTRL_REG_M, LSM9DS0_PP_OD_BIT, isopendrain);
+}
+
+bool LSM9DS0::getInterruptPolarity() {
+  I2Cdev::readBit(devAddrMagAcc, LSM9DS0_RA_INT_CTRL_REG_M, LSM9DS0_IEA_BIT, buffer);
+  return buffer[0];
+}
+
+void LSM9DS0::getInterruptPolarity(bool enable) {
+  I2Cdev::writeBit(devAddrMagAcc, LSM9DS0_RA_INT_CTRL_REG_M, LSM9DS0_IEA_BIT, enable);
+}
+
+bool LSM9DS0::getMagAccInterruptLatch() {
+  I2Cdev::readBit(devAddrMagAcc, LSM9DS0_RA_INT_CTRL_REG_M, LSM9DS0_IEL_BIT, buffer);
+  return buffer[0];
+}
+
+void LSM9DS0::getMagAccInterruptLatch(bool enable) {
+  I2Cdev::writeBit(devAddrMagAcc, LSM9DS0_RA_INT_CTRL_REG_M, LSM9DS0_IEL_BIT, enable);
+}
+bool LSM9DS0::getAcc4DDetection() {
+  I2Cdev::readBit(devAddrMagAcc, LSM9DS0_RA_INT_CTRL_REG_M, LSM9DS0_4D_BIT, buffer);
+  return buffer[0];
+}
+
+void LSM9DS0::setAcc4DDetection(bool enable) {
+  I2Cdev::writeBit(devAddrMagAcc, LSM9DS0_RA_INT_CTRL_REG_M, LSM9DS0_4D_BIT, enable);
+}
+
+bool LSM9DS0::getMagInterruptEnable() {
+  I2Cdev::readBit(devAddrMagAcc, LSM9DS0_RA_INT_CTRL_REG_M, LSM9DS0_MIEN_BIT, buffer);
+  return buffer[0];
+}
+
+void LSM9DS0::setMagInterruptEnable(bool enable) {
+  I2Cdev::writeBit(devAddrMagAcc, LSM9DS0_RA_INT_CTRL_REG_M, LSM9DS0_MIEN_BIT, enable);
+}
+
+void LSM9DS0::setMagAccWatermarkEnable(bool enable) {
+  I2Cdev::writeBit(devAddrMagAcc, LSM9DS0_RA_CTRL_REG0_XM, LSM9DS0_XM_WTM_EN_BIT, enable);
+}
+
+void LSM9DS0::setMagAccHighPassForClick(bool enable) {
+  I2Cdev::writeBit(devAddrMagAcc, LSM9DS0_RA_CTRL_REG0_XM, LSM9DS0_XM_HP_CLICK_BIT, enable);
+}
+
+void LSM9DS0::setMagAccHighPassIrq1(bool enable) {
+  I2Cdev::writeBit(devAddrMagAcc, LSM9DS0_RA_CTRL_REG0_XM, LSM9DS0_XM_HPIS1_BIT, enable);
+}
+
+void LSM9DS0::setMagAccHighPassIrq2(bool enable) {
+  I2Cdev::writeBit(devAddrMagAcc, LSM9DS0_RA_CTRL_REG0_XM, LSM9DS0_XM_HPIS2_BIT, enable);
+}
+
+void LSM9DS0::setAccRate(lsm9ds0_acc_data_rate_t rate) {
+  I2Cdev::writeBits(devAddrMagAcc, LSM9DS0_RA_CTRL_REG1_XM, LSM9DS0_XM_AODR_BIT,
+      LSM9DS0_XM_AODR_LENGTH, rate);
+}
+
+void LSM9DS0::setAccAntiAliasFilterBandwidth(lsm9ds0_acc_filter_bw_t bw) {
+  I2Cdev::writeBits(devAddrMagAcc, LSM9DS0_RA_CTRL_REG2_XM, LSM9DS0_XM_ABW_BIT,
+      LSM9DS0_XM_ABW_LENGTH, bw);
+}
+
+void LSM9DS0::setAccFullScale(lsm9ds0_acc_full_scale_t scale) {
+  switch (scale) {
+    case LSM9DS0_ACC_2G:
+      acc_scale = 0.061 / 1000. * 9.81;
+      break;
+    case LSM9DS0_ACC_4G:
+      acc_scale = 0.122 / 1000. * 9.81;
+      break;
+    case LSM9DS0_ACC_6G:
+      acc_scale = 0.183 / 1000. * 9.81;
+      break;
+    case LSM9DS0_ACC_8G:
+      acc_scale = 0.244 / 1000. * 9.81;
+      break;
+    case LSM9DS0_ACC_16G:
+      acc_scale = 0.732 / 1000. * 9.81;
+      break;
+    }
+  I2Cdev::writeBits(devAddrMagAcc, LSM9DS0_RA_CTRL_REG2_XM, LSM9DS0_XM_AFS_BIT,
+      LSM9DS0_XM_AFS_LENGTH, scale);
+}
+
+lsm9ds0_acc_full_scale_t LSM9DS0::getAccFullScale() {
+  I2Cdev::readBits(devAddrMagAcc, LSM9DS0_RA_CTRL_REG2_XM, LSM9DS0_XM_AFS_BIT,
+      LSM9DS0_XM_AFS_LENGTH, buffer);
+  return (lsm9ds0_acc_full_scale_t) buffer[0];
+}
+
+void LSM9DS0::setMagResolution(bool high) {
+  I2Cdev::writeBits(devAddrMagAcc, LSM9DS0_RA_CTRL_REG5_XM, LSM9DS0_XM_M_RES_BIT,
+      LSM9DS0_XM_M_RES_LENGTH, high ? 0b11 : 0b00);
+}
+
+void LSM9DS0::setMagOutputRate(lsm9ds0_mag_output_rate_t rate) {
+  I2Cdev::writeBits(devAddrMagAcc, LSM9DS0_RA_CTRL_REG5_XM, LSM9DS0_XM_M_ODR_LENGTH,
+      LSM9DS0_XM_M_ODR_LENGTH, rate);
+}
+
+void LSM9DS0::setMagFullScale(lsm9ds0_mag_scale_t scale) {
+  switch (scale) {
+    case LSM9DS0_MAG_2_GAUSS:
+      mag_scale=0.08 / 1000.;
+      break;
+    case LSM9DS0_MAG_4_GAUSS:
+      mag_scale=0.16 / 1000.;
+      break;
+    case LSM9DS0_MAG_8_GAUSS:
+      mag_scale=0.32 / 1000.;
+      break;
+    case LSM9DS0_MAG_12_GAUSS:
+      mag_scale=0.48 / 1000.;
+      break;
+  }
+  I2Cdev::writeBits(devAddrMagAcc, LSM9DS0_RA_CTRL_REG6_XM, LSM9DS0_XM_MFS_BIT,
+      LSM9DS0_XM_MFS_LENGTH, scale);
+}
+
+lsm9ds0_mag_scale_t LSM9DS0::getMagFullScale() {
+  I2Cdev::readBits(devAddrMagAcc, LSM9DS0_RA_CTRL_REG6_XM, LSM9DS0_XM_MFS_BIT,
+      LSM9DS0_XM_MFS_LENGTH, buffer);
+  return (lsm9ds0_mag_scale_t) buffer[0];
+}
+
+void LSM9DS0::setAccHighPassFilterMode(lsm9ds0_acc_highpass_fitermode_t fm) {
+  I2Cdev::writeBits(devAddrMagAcc, LSM9DS0_RA_CTRL_REG7_XM, LSM9DS0_XM_AHPDM_BIT,
+      LSM9DS0_XM_AHPDM_LENGTH, fm);
+}
+
+void LSM9DS0::setFilterEnable(bool enable) {
+  I2Cdev::writeBit(devAddrMagAcc, LSM9DS0_RA_CTRL_REG7_XM, LSM9DS0_XM_AFDS_BIT, enable);
+}
+
+void LSM9DS0::getAccleration(int16_t* x, int16_t* y, int16_t* z) {
+  *x = getAcclerationX();
+  *y = getAcclerationY();
+  *z = getAcclerationZ();
+}
+
+bool LSM9DS0::getAccXYZOverrun() {
+  I2Cdev::readBit(devAddrMagAcc, LSM9DS0_RA_STATUS_REG_A,
+      LSM9DS0_ZYXOR_BIT, buffer);
+  return buffer[0];
+}
+
+bool LSM9DS0::getAccZOverrun() {
+  I2Cdev::readBit(devAddrMagAcc, LSM9DS0_RA_STATUS_REG_A,
+      LSM9DS0_ZOR_BIT, buffer);
+  return buffer[0];
+}
+
+bool LSM9DS0::getAccYOverrun() {
+  I2Cdev::readBit(devAddrMagAcc, LSM9DS0_RA_STATUS_REG_A,
+      LSM9DS0_YOR_BIT, buffer);
+  return buffer[0];
+}
+
+bool LSM9DS0::getAccXOverrun() {
+  I2Cdev::readBit(devAddrMagAcc, LSM9DS0_RA_STATUS_REG_A,
+      LSM9DS0_XOR_BIT, buffer);
+  return buffer[0];
+}
+
+bool LSM9DS0::getAccXYZDataAvailable() {
+  I2Cdev::readBit(devAddrMagAcc, LSM9DS0_RA_STATUS_REG_A,
+      LSM9DS0_ZYXDA_BIT, buffer);
+  return buffer[0];
+}
+
+bool LSM9DS0::getAccZDataAvailable() {
+  I2Cdev::readBit(devAddrMagAcc, LSM9DS0_RA_STATUS_REG_A,
+      LSM9DS0_ZDA_BIT, buffer);
+  return buffer[0];
+}
+
+bool LSM9DS0::getAccYDataAvailable() {
+  I2Cdev::readBit(devAddrMagAcc, LSM9DS0_RA_STATUS_REG_A,
+      LSM9DS0_YDA_BIT, buffer);
+  return buffer[0];
+}
+
+bool LSM9DS0::getAccXDataAvailable() {
+  I2Cdev::readBit(devAddrMagAcc, LSM9DS0_RA_STATUS_REG_A,
+      LSM9DS0_XDA_BIT, buffer);
+  return buffer[0];
+}
+
+int16_t LSM9DS0::getAcclerationX() {
+  I2Cdev::readBytes(devAddrMagAcc, BIT_AUTOINCREMENT|LSM9DS0_RA_OUT_X_A, 2, buffer);
+  return ((int16_t*) buffer)[0];
+}
+
+int16_t LSM9DS0::getAcclerationY() {
+  I2Cdev::readBytes(devAddrMagAcc, BIT_AUTOINCREMENT|LSM9DS0_RA_OUT_Y_A, 2, buffer);
+  return ((int16_t*) buffer)[0];
+}
+
+int16_t LSM9DS0::getAcclerationZ() {
+  I2Cdev::readBytes(devAddrMagAcc, BIT_AUTOINCREMENT|LSM9DS0_RA_OUT_Z_A, 2, buffer);
+  return ((int16_t*) buffer)[0];
+}
+
+measurement_t LSM9DS0::getMeasurement() {
+  measurement_t m;
+  int16_t *val = (int16_t*) buffer;
+
+  I2Cdev::readBytes(devAddrMagAcc, BIT_AUTOINCREMENT|LSM9DS0_RA_OUT_X_A, 6, buffer);
+  m.ax = acc_scale * val[0];
+  m.ay = acc_scale * val[1];
+  m.az = acc_scale * val[2];
+
+  I2Cdev::readBytes(devAddrMagAcc, BIT_AUTOINCREMENT|LSM9DS0_RA_OUT_X_M, 6, buffer);
+  m.mx = mag_scale * val[0];
+  m.my = mag_scale * val[1];
+  m.mz = mag_scale * val[2];
+
+  I2Cdev::readBytes(devAddrGyro, BIT_AUTOINCREMENT|LSM9DS0_RA_OUT_X_L, 6, buffer);
+  m.gx = gyr_scale * val[0];
+  m.gy = gyr_scale * val[1];
+  m.gz = gyr_scale * val[2];
+
+  I2Cdev::readBytes(devAddrMagAcc, BIT_AUTOINCREMENT|LSM9DS0_RA_OUT_TEMP, 6, buffer);
+  m.t = val[0] / 800.;
+
+  return m;
 }

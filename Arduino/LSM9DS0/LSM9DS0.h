@@ -44,6 +44,8 @@ THE SOFTWARE.
 #define LSM9DS0_GYRO_ADDRESS_AD0_HIGH  0x6B
 #define LSM9DS0_GYRO_DEFAULT_ADDRESS   LSM9DS0_GYRO_ADDRESS_AD0_LOW
 
+#define BIT_AUTOINCREMENT (1<<7)
+
 typedef enum {
   LSM9DS0_RA_WHO_AM_I  = 0x0F,
   LSM9DS0_RA_CTRL_REG1 = 0x20,
@@ -128,25 +130,31 @@ typedef enum {
 #define LSM9DS0_YEN_BIT           1
 #define LSM9DS0_XEN_BIT           0
 
-#define LSM9DS0_RATE_100          0b00
-#define LSM9DS0_RATE_200          0b01
-#define LSM9DS0_RATE_400          0b10
-#define LSM9DS0_RATE_800          0b11
+typedef enum {
+  LSM9DS0_RATE_95           = 0b00,
+  LSM9DS0_RATE_190          = 0b01,
+  LSM9DS0_RATE_380          = 0b10,
+  LSM9DS0_RATE_760          = 0b11
+} gyro_rate_t;
 
-#define LSM9DS0_BW_LOW            0b00
-#define LSM9DS0_BW_MED_LOW        0b01
-#define LSM9DS0_BW_MED_HIGH       0b10
-#define LSM9DS0_BW_HIGH           0b11
+typedef enum {
+  LSM9DS0_BW_LOW            = 0b00,
+  LSM9DS0_BW_MED_LOW        = 0b01,
+  LSM9DS0_BW_MED_HIGH       = 0b10,
+  LSM9DS0_BW_HIGH           = 0b11
+} gyro_bandwidth_t;
 
 #define LSM9DS0_HPM_BIT           5
 #define LSM9DS0_HPM_LENGTH        2
 #define LSM9DS0_HPCF_BIT          3
 #define LSM9DS0_HPCF_LENGTH       4
 
-#define LSM9DS0_HPM_HRF           0b00
-#define LSM9DS0_HPM_REFERENCE     0b01
-#define LSM9DS0_HPM_NORMAL        0b10
-#define LSM9DS0_HPM_AUTORESET     0b11
+typedef enum {
+  LSM9DS0_HPM_HRF           = 0b00,
+  LSM9DS0_HPM_REFERENCE     = 0b01,
+  LSM9DS0_HPM_NORMAL        = 0b10,
+  LSM9DS0_HPM_AUTORESET     = 0b11
+} lsm9ds0_acc_highpass_fitermode_t;
 
 #define LSM9DS0_HPCF1             0b0000
 #define LSM9DS0_HPCF2             0b0001
@@ -220,11 +228,13 @@ typedef enum {
 #define LSM9DS0_FIFO_WTM_BIT      4
 #define LSM9DS0_FIFO_WTM_LENGTH   5
 
-#define LSM9DS0_FM_BYPASS         0b000
-#define LSM9DS0_FM_FIFO           0b001
-#define LSM9DS0_FM_STREAM         0b010
-#define LSM9DS0_FM_STREAM_FIFO    0b011
-#define LSM9DS0_FM_BYPASS_STREAM  0b100
+typedef enum {
+  LSM9DS0_FM_BYPASS         = 0b000,
+  LSM9DS0_FM_FIFO           = 0b001,
+  LSM9DS0_FM_STREAM         = 0b010,
+  LSM9DS0_FM_STREAM_FIFO    = 0b011,
+  LSM9DS0_FM_BYPASS_STREAM  = 0b100
+} lsm9ds0_fifo_mode_t;
 
 #define LSM9DS0_FIFO_STATUS_BIT   7
 #define LSM9DS0_FIFO_OVRN_BIT     6
@@ -274,7 +284,7 @@ typedef enum {
 #define LSM9DS0_M_MROI_BIT        1
 #define LSM9DS0_M_MINT_BIT        0
 
-#define LSM9DS0_XM_BOOT_BIT_BIT   7
+#define LSM9DS0_XM_BOOT_BIT       7
 #define LSM9DS0_XM_FIFO_EN_BIT    6
 #define LSM9DS0_XM_WTM_EN_BIT     5
 #define LSM9DS0_XM_HP_CLICK_BIT   3
@@ -288,17 +298,19 @@ typedef enum {
 #define LSM9DS0_XM_AYEN           1
 #define LSM9DS0_XM_AXEN           0
 
-#define LSM9DS0_ACC_RATE_PDOWN    0b0000
-#define LSM9DS0_ACC_RATE_3_125    0b0001
-#define LSM9DS0_ACC_RATE_6_25     0b0010
-#define LSM9DS0_ACC_RATE_12_5     0b0011
-#define LSM9DS0_ACC_RATE_25       0b0100
-#define LSM9DS0_ACC_RATE_50       0b0101
-#define LSM9DS0_ACC_RATE_100      0b0110
-#define LSM9DS0_ACC_RATE_200      0b0111
-#define LSM9DS0_ACC_RATE_400      0b1000
-#define LSM9DS0_ACC_RATE_800      0b1001
-#define LSM9DS0_ACC_RATE_1600     0b1010
+typedef enum {
+  LSM9DS0_ACC_RATE_PDOWN    = 0b0000,
+  LSM9DS0_ACC_RATE_3_125    = 0b0001,
+  LSM9DS0_ACC_RATE_6_25     = 0b0010,
+  LSM9DS0_ACC_RATE_12_5     = 0b0011,
+  LSM9DS0_ACC_RATE_25       = 0b0100,
+  LSM9DS0_ACC_RATE_50       = 0b0101,
+  LSM9DS0_ACC_RATE_100      = 0b0110,
+  LSM9DS0_ACC_RATE_200      = 0b0111,
+  LSM9DS0_ACC_RATE_400      = 0b1000,
+  LSM9DS0_ACC_RATE_800      = 0b1001,
+  LSM9DS0_ACC_RATE_1600     = 0b1010,
+} lsm9ds0_acc_data_rate_t;
 
 #define LSM9DS0_XM_ABW_BIT        7
 #define LSM9DS0_XM_ABW_LENGTH     2
@@ -308,16 +320,20 @@ typedef enum {
 #define LSM9DS0_XM_AST_LENGTH     2
 #define LSM9DS0_XM_SIM_BIT        0
 
-#define LSM9DS0_ACC_FILTER_BW_773 0b00
-#define LSM9DS0_ACC_FILTER_BW_194 0b01
-#define LSM9DS0_ACC_FILTER_BW_362 0b10
-#define LSM9DS0_ACC_FILTER_BW_50  0b11
+typedef enum {
+  LSM9DS0_ACC_FILTER_BW_773 = 0b00,
+  LSM9DS0_ACC_FILTER_BW_194 = 0b01,
+  LSM9DS0_ACC_FILTER_BW_362 = 0b10,
+  LSM9DS0_ACC_FILTER_BW_50  = 0b11,
+} lsm9ds0_acc_filter_bw_t;
 
-#define LSM9DS0_ACC_FULL_SCALE_2G  0b000
-#define LSM9DS0_ACC_FULL_SCALE_4G  0b001
-#define LSM9DS0_ACC_FULL_SCALE_6G  0b010
-#define LSM9DS0_ACC_FULL_SCALE_8G  0b011
-#define LSM9DS0_ACC_FULL_SCALE_16G 0b100
+typedef enum {
+  LSM9DS0_ACC_2G   = 0b000,
+  LSM9DS0_ACC_4G  = 0b001,
+  LSM9DS0_ACC_6G  = 0b010,
+  LSM9DS0_ACC_8G  = 0b011,
+  LSM9DS0_ACC_16G = 0b100,
+} lsm9ds0_acc_full_scale_t;
 
 #define LSM9DS0_ACC_ST_NORMAL      0b00
 #define LSM9DS0_ACC_ST_POSSIGN     0b01
@@ -345,24 +361,28 @@ typedef enum {
 #define LSM9DS0_XM_M_RES_BIT     6
 #define LSM9DS0_XM_M_RES_LENGTH  2
 #define LSM9DS0_XM_M_ODR_BIT     4
-#define LSM9DS0_XM_M_ODR_LENGth  3
+#define LSM9DS0_XM_M_ODR_LENGTH  3
 #define LSM9DS0_XM_M_LIR1        1
 #define LSM9DS0_XM_M_LIR2        0
 
-#define LSM9DS0_M_ODR_3_125      0b000
-#define LSM9DS0_M_ODR_6_25       0b001
-#define LSM9DS0_M_ODR_12_5       0b010
-#define LSM9DS0_M_ODR_25         0b011
-#define LSM9DS0_M_ODR_50         0b100
-#define LSM9DS0_M_ODR_100        0b101
+typedef enum {
+  LSM9DS0_M_ODR_3_125      = 0b000,
+  LSM9DS0_M_ODR_6_25       = 0b001,
+  LSM9DS0_M_ODR_12_5       = 0b010,
+  LSM9DS0_M_ODR_25         = 0b011,
+  LSM9DS0_M_ODR_50         = 0b100,
+  LSM9DS0_M_ODR_100        = 0b101
+} lsm9ds0_mag_output_rate_t;
 
 #define LSM9DS0_XM_MFS_BIT       6
 #define LSM9DS0_XM_MFS_LENGTH    2
 
-#define LSM9DS0_M_2_GAUSS        0b00
-#define LSM9DS0_M_4_GAUSS        0b01
-#define LSM9DS0_M_8_GAUSS        0b10
-#define LSM9DS0_M_12_GAUSS       0b11
+typedef enum {
+  LSM9DS0_MAG_2_GAUSS        = 0b00,
+  LSM9DS0_MAG_4_GAUSS        = 0b01,
+  LSM9DS0_MAG_8_GAUSS        = 0b10,
+  LSM9DS0_MAG_12_GAUSS       = 0b11
+} lsm9ds0_mag_scale_t;
 
 #define LSM9DS0_XM_AHPDM_BIT     7
 #define LSM9DS0_XM_AHPDM_LENGTH  2
@@ -393,12 +413,6 @@ typedef enum {
 #define LSM9DS0_XM_FIFO_TRSH_BIT 4
 #define LSM9DS0_XM_FIFO_TRSH_LENGTH 5
 
-#define LSM9DS0_XM_FM_BYPASS     0b000
-#define LSM9DS0_XM_FM_FIFO       0b001
-#define LSM9DS0_XM_FM_STREAM     0b010
-#define LSM9DS0_XM_FM_STREAMFIFO 0b011
-#define LSM9DS0_XM_FM_BPSTREAM   0b100
-
 #define LSM9DS0_XM_WTM_BIT       7
 #define LSM9DS0_XM_OVRUN_BIT     6
 #define LSM9DS0_XM_EMPTY_BIT     5
@@ -407,6 +421,12 @@ typedef enum {
 
 #define LSM9DS0_INT1_AOI_BIT     7
 
+typedef struct {
+  float gx,gy,gz, // in °/s
+        mx,my,mz, // in gauss
+        ax,ay,az, // in m/s²
+        t;        // in °Celsius
+} measurement_t;
 
 class LSM9DS0 {
     public:
@@ -416,15 +436,18 @@ class LSM9DS0 {
         void initialize();
         bool testConnection();
 
+        measurement_t getMeasurement();
+
         // WHO_AM_I register, read-only
         uint8_t getDeviceID();
+        uint8_t getDeviceIDMagAcc();
 
         // CTRL_REG1 register, r/w
-        void     setGyroOutputDataRate(uint16_t rate);
-        uint16_t getGyroOutputDataRate();
-        void     setGyroBandwidthCutOffMode(uint8_t mode);
-        uint8_t  getGyroBandwidthCutOffMode();
-        float    getGyroBandwidthCutOff();
+        void        setGyroOutputDataRate(gyro_rate_t rate);
+        gyro_rate_t getGyroOutputDataRate();
+        void             setGyroBandwidthCutOffMode(gyro_bandwidth_t mode);
+        gyro_bandwidth_t getGyroBandwidthCutOffMode();
+        float            getGyroBandwidthCutOff();
         void setGyroPowerOn(bool on);
         bool getGyroPowerOn();
         void setGyroZEnabled(bool enabled);
@@ -469,10 +492,10 @@ class LSM9DS0 {
         void setGyroSPIMode(bool mode);
         bool getGyroSPIMode();
 
-        // CTRL_REG5 register, r/w
+        // CTRL_REG5 and CTRL_REG0_XM register, r/w
         void rebootMemoryContent();
-        void setGyroFIFOEnabled(bool enabled);
-        bool getGyroFIFOEnabled();
+        void setFIFOEnabled(bool enabled);
+        bool getFIFOEnabled();
         void setGyroHighPassFilterEnabled(bool enabled);
         bool getGyroHighPassFilterEnabled();
         void setGyroDataFilter(uint8_t filter);
@@ -481,9 +504,6 @@ class LSM9DS0 {
         // REFERENCE/DATACAPTURE register, r/w
         void setGyroInterruptReference(uint8_t reference);
         uint8_t getGyroInterruptReference();
-
-        // OUT_TEMP register, read-only
-        uint8_t getGyroTemperature();
 
         // STATUS register, read-only
         bool getGyroXYZOverrun();
@@ -501,17 +521,24 @@ class LSM9DS0 {
         int16_t getAngularVelocityY();
         int16_t getAngularVelocityZ();
 
-        // FIFO_CTRL register, r/w
-        void    setGyroFIFOMode(uint8_t mode);
-        uint8_t getGyroFIFOMode();
+        // FIFO_CTRL register, r/w, for both Gyro and Acc and Mag
+        void    setFIFOMode(lsm9ds0_fifo_mode_t mode);
+        lsm9ds0_fifo_mode_t getFIFOMode();
         void    setGyroFIFOThreshold(uint8_t wtm);
         uint8_t getGyroFIFOThreshold();
+        void    setMagAccFIFOThreshold(uint8_t wtm);
+        uint8_t getMagAccFIFOThreshold();
 
         // FIFO_SRC register, read-only
         bool getGyroFIFOAtWatermark();
         bool getGyroFIFOOverrun();
         bool getGyroFIFOEmpty();
         uint8_t getGyroFIFOStoredDataLevel();
+
+        bool getMagAccFIFOAtWatermark();
+        bool getMagAccFIFOOverrun();
+        bool getMagAccFIFOEmpty();
+        uint8_t getMagAccFIFOStoredDataLevel();
 
         // INT1_CFG register, r/w
         void setGyroInterruptCombination(bool combination);
@@ -564,11 +591,95 @@ class LSM9DS0 {
         int16_t getTemperature();
         float   getTemperatureCelsius();
 
+        // STATUS_REG_M register, read-only
+        bool getMagXYZOverrun();
+        bool getMagZOverrun();
+        bool getMagYOverrun();
+        bool getMagXOverrun();
+        bool getMagXYZDataAvailable();
+        bool getMagZDataAvailable();
+        bool getMagYDataAvailable();
+        bool getMagXDataAvailable();
+
+        // OUT_MAG_* registers, read-only
+        void    getMagneticFieldStrength(int16_t* x, int16_t* y, int16_t* z);
+        int16_t getMagneticFieldStrengthX();
+        int16_t getMagneticFieldStrengthY();
+        int16_t getMagneticFieldStrengthZ();
+
+        // INT_CTRL_REG_M, r/w
+        void setMagXAxisInterrupt(bool enable);
+        bool getMagXAxisInterrupt();
+        void setMagYAxisInterrupt(bool enable);
+        bool getMagYAxisInterrupt();
+        bool getMagZAxisInterrupt();
+        void setMagZAxisInterrupt(bool enable);
+        bool getMagAccInterruptOpenDrain();
+        void setMagAccInterruptOpenDrain(bool isopendrain);
+        bool getInterruptPolarity();
+        void getInterruptPolarity(bool enable);
+        bool getMagAccInterruptLatch();
+        void getMagAccInterruptLatch(bool enable);
+        bool getAcc4DDetection();
+        void setAcc4DDetection(bool enable);
+        bool getMagInterruptEnable();
+        void setMagInterruptEnable(bool enable);
+
+        // INT_SRC_REG_M not implemented
+        // INT_THS_M not implemented
+        // OFFSET_*_M not implemented
+        // REFERENCE_* not implemented
+        // CTRL_REG0_XM r/w
+        void setMagAccWatermarkEnable(bool enable);
+        void setMagAccHighPassForClick(bool enable);
+        void setMagAccHighPassIrq1(bool enable);
+        void setMagAccHighPassIrq2(bool enable);
+
+        // CTRL_REG1_XM, w, TODO: only rate settable
+        void setAccRate(lsm9ds0_acc_data_rate_t rate);
+
+        // CTRL_REG2_XM, w, TODO: only filter bw and scale
+        void setAccAntiAliasFilterBandwidth(lsm9ds0_acc_filter_bw_t bw);
+        void setAccFullScale(lsm9ds0_acc_full_scale_t scale);
+        lsm9ds0_acc_full_scale_t getAccFullScale();
+
+        // CTRL_REG_3_XM, not implemented
+        // CTRL_REG_4_XM, not implemented
+        // CTRL_REG_5_XM, TODO: only resolution and rate selection
+        void setMagResolution(bool high);
+        void setMagOutputRate(lsm9ds0_mag_output_rate_t rate);
+
+        // CTRL_REG_6_XM
+        void setMagFullScale(lsm9ds0_mag_scale_t scale);
+        lsm9ds0_mag_scale_t getMagFullScale();
+
+        // CTRL_REG_7_XM, TODO: partly
+        void setAccHighPassFilterMode(lsm9ds0_acc_highpass_fitermode_t fm);
+        void setFilterEnable(bool enable);
+
+        // STATUS_REG_A register, read-only
+        bool getAccXYZOverrun();
+        bool getAccZOverrun();
+        bool getAccYOverrun();
+        bool getAccXOverrun();
+        bool getAccXYZDataAvailable();
+        bool getAccZDataAvailable();
+        bool getAccYDataAvailable();
+        bool getAccXDataAvailable();
+
+        // OUT_ACC* registers, read-only
+        void    getAccleration(int16_t* x, int16_t* y, int16_t* z);
+        int16_t getAcclerationX();
+        int16_t getAcclerationY();
+        int16_t getAcclerationZ();
 
     private:
         uint8_t devAddrGyro,
                 devAddrMagAcc;
         uint8_t buffer[6];
+
+        // correction values from datasheet pg 13
+        float acc_scale, mag_scale, gyr_scale;
 };
 
 #endif /* _LSM9DS0_H_ */
