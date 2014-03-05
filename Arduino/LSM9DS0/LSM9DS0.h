@@ -422,7 +422,7 @@ typedef enum {
 #define LSM9DS0_INT1_AOI_BIT     7
 
 typedef struct {
-  float gx,gy,gz, // in °/s
+  float gx,gy,gz, // in rad/s
         mx,my,mz, // in gauss
         ax,ay,az, // in m/s²
         t;        // in °Celsius

@@ -31,6 +31,7 @@ THE SOFTWARE.
 */
 
 #include "LSM9DS0.h"
+#include <math.h>
 
 /** Default constructor, uses default I2C address.
  * @see LSM9DS0_DEFAULT_ADDRESS
@@ -1879,9 +1880,9 @@ measurement_t LSM9DS0::getMeasurement() {
   m.mz = mag_scale * val[2];
 
   I2Cdev::readBytes(devAddrGyro, BIT_AUTOINCREMENT|LSM9DS0_RA_OUT_X_L, 6, buffer);
-  m.gx = gyr_scale * val[0];
-  m.gy = gyr_scale * val[1];
-  m.gz = gyr_scale * val[2];
+  m.gx = gyr_scale * val[0] * M_PI/180.;
+  m.gy = gyr_scale * val[1] * M_PI/180.;
+  m.gz = gyr_scale * val[2] * M_PI/180.;
 
   I2Cdev::readBytes(devAddrMagAcc, BIT_AUTOINCREMENT|LSM9DS0_RA_OUT_TEMP, 6, buffer);
   m.t = val[0] / 800.;
